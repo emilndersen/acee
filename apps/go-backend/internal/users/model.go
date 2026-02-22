@@ -1,0 +1,13 @@
+package users
+
+type User struct {
+	ID        int    `json:"id"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	CreatedAt string `json:"created_at"`
+}
+
+type CreateUserInput struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
