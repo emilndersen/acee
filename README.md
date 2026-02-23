@@ -1,11 +1,32 @@
 # Acee
 
-Monolithic repository for a fullstack project (backend + frontend).
+Personal website & portfolio backend for a photographer.
 
-## Goals
-- Clean, structured TypeScript backend
-- Modern frontend (TBD)
-- Shared types (optional)
+This project is a fullstack monorepo application built with:
 
-## Status
-Scaffold initialized. Implementation coming next.
+- 🖥 Backend: Go (chi + pgx + PostgreSQL)
+- 🌐 Frontend: React + TypeScript (Vite)
+- 🗄 Database: PostgreSQL
+- 🧱 Architecture: Layered (HTTP → Handler → Repository → DB)
+
+---
+
+## 🎯 Project Goal
+
+Acee is a personal website for a photographer.
+
+It will include:
+
+- 📷 Portfolio gallery
+- 🧑 About page
+- 📩 Contact form
+- 🗂 Admin panel for managing photos
+- 👥 Users system
+- 🔐 Authentication (planned)
+- 🧾 Booking system (planned)
+
+The goal is to build a clean, scalable backend and modern frontend while keeping the architecture maintainable and production-ready.
+
+---
+
+## 🏗 Architecture
