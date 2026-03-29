@@ -1,5 +1,18 @@
-node_modules
-dist
-.env
-.env.*
+# Node / Frontend
+node_modules/
+dist/
+.vite/
 .DS_Store
+
+# Env files
+.env
+.env.* 
+
+# Go
+apps/go-backend/bin/
+apps/go-backend/*.exe
+apps/go-backend/*.out
+
+# IDE
+.vscode/
+.idea/

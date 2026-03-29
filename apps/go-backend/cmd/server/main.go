@@ -15,9 +15,6 @@ func main() {
 	_ = godotenv.Load()
 
 	cfg := config.Load()
-	if cfg.DatabaseURL == "" {
-		log.Fatal("DATABASE_URL is required (set it in apps/go-backend/.env)")
-	}
 
 	pool, err := db.NewPool(cfg.DatabaseURL)
 	if err != nil {

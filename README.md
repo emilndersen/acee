@@ -29,4 +29,8 @@ The goal is to build a clean, scalable backend and modern frontend while keeping
 
 ---
 
-## 🏗 Architecture
+## 🏗 Project Structure
+
+Acee follows a monorepo structure to keep frontend, backend and database logic in a single repository while maintaining clear separation of concerns.
+
+

@@ -1,0 +1,121 @@
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 60% at 50% 50%, #1a0510 0%, var(--black) 70%);
+}
+
+.hero-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Spike container ── */
+.spike-container {
+  position: relative;
+  width: 420px;
+  height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.spike-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  animation: rotateCW 18s linear infinite;
+}
+
+.spike-ring--inner {
+  width: 85%;
+  height: 85%;
+  animation: rotateCCW 12s linear infinite;
+}
+
+@keyframes rotateCW {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes rotateCCW {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+
+/* ── Photo circle ── */
+.photo-circle {
+  position: relative;
+  z-index: 3;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(200, 0, 26, 0.4);
+  box-shadow:
+    0 0 60px rgba(200, 0, 26, 0.3),
+    0 0 120px rgba(200, 0, 26, 0.1),
+    inset 0 0 40px rgba(200, 0, 26, 0.2);
+}
+
+.photo-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0) contrast(1.1) brightness(0.85) sepia(0.3);
+}
+
+.photo-circle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(200, 0, 26, 0.25);
+  mix-blend-mode: multiply;
+}
+
+/* ── Text ── */
+.hero-text {
+  position: absolute;
+  bottom: -130px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap;
+  z-index: 4;
+}
+
+.hero-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(48px, 8vw, 96px);
+  letter-spacing: 12px;
+  color: var(--white);
+  line-height: 0.9;
+  text-shadow: 0 0 80px rgba(200, 0, 26, 0.3);
+}
+
+.hero-desc {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 16px;
+  color: var(--dust);
+  letter-spacing: 4px;
+  margin-top: 14px;
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .spike-container { width: 300px; height: 300px; }
+  .photo-circle { width: 140px; height: 140px; }
+}

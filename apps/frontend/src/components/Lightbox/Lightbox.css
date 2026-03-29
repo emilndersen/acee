@@ -1,0 +1,91 @@
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 6, 8, 0.96);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.lightbox-inner {
+  position: relative;
+  max-width: 80vw;
+  max-height: 85vh;
+  display: flex;
+  gap: 48px;
+  align-items: center;
+}
+
+.lightbox-img {
+  max-height: 80vh;
+  max-width: 60vw;
+  object-fit: contain;
+  filter: contrast(1.05);
+}
+
+.lightbox-meta {
+  width: 240px;
+}
+
+.lightbox-album {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--red);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.lightbox-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 36px;
+  letter-spacing: 4px;
+  color: var(--white);
+  margin-bottom: 16px;
+}
+
+.lightbox-desc {
+  font-size: 14px;
+  color: var(--dust);
+  line-height: 1.8;
+  font-style: italic;
+  margin-bottom: 28px;
+}
+
+.lightbox-go {
+  display: inline-block;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--cream);
+  text-decoration: none;
+  border-bottom: 1px solid var(--red);
+  padding-bottom: 3px;
+  transition: color 0.2s;
+}
+
+.lightbox-go:hover { color: var(--red); }
+
+.lightbox-close {
+  position: absolute;
+  top: -48px;
+  right: 0;
+  background: none;
+  border: none;
+  color: var(--dust);
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  cursor: none;
+  transition: color 0.2s;
+}
+
+.lightbox-close:hover { color: var(--red); }
