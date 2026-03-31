@@ -20,12 +20,39 @@ export default function BookingForm() {
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    // TODO: wire up to Go backend POST /api/bookings
-    console.log('Booking:', form)
+const handleSubmit = async (e) => {
+  e.preventDefault()
+
+  try {
+    const res = await fetch('/api/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: form.name,
+        contact: form.contact,
+        shoot_type: form.type,
+        date: form.date,
+        idea: form.idea,
+      }),
+    })
+
+    if (!res.ok) {
+      throw new Error('Ошибка отправки')
+    }
+
     setSent(true)
+    setForm({
+      name: '',
+      contact: '',
+      type: '',
+      date: '',
+      idea: '',
+    })
+  } catch (error) {
+    console.error(error)
+    alert('Не удалось отправить заявку')
   }
+}
 
   return (
     <section className="booking">

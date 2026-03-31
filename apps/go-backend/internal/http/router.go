@@ -45,7 +45,7 @@ func NewRouter(pool *pgxpool.Pool) http.Handler {
 	})
 
 	// ── Users ───────────────────────────────────────────────
-	usersRepo    := users.NewRepo(pool)
+	usersRepo := users.NewRepo(pool)
 	usersHandler := users.NewHandler(usersRepo)
 
 	r.Route("/api/users", func(r chi.Router) {
@@ -54,18 +54,18 @@ func NewRouter(pool *pgxpool.Pool) http.Handler {
 	})
 
 	// ── Photos ──────────────────────────────────────────────
-	photosRepo    := photos.NewRepo(pool)
+	photosRepo := photos.NewRepo(pool)
 	photosHandler := photos.NewHandler(photosRepo)
 
 	r.Route("/api/photos", func(r chi.Router) {
-		r.Get("/", photosHandler.List)             // все фото
-		r.Post("/", photosHandler.Create)          // добавить фото (админка)
-		r.Get("/{album}", photosHandler.ByAlbum)   // фото по альбому
-		r.Delete("/{id}", photosHandler.Delete)    // удалить фото (админка)
+		r.Get("/", photosHandler.List)           // все фото
+		r.Post("/", photosHandler.Create)        // добавить фото (админка)
+		r.Get("/{album}", photosHandler.ByAlbum) // фото по альбому
+		r.Delete("/{id}", photosHandler.Delete)  // удалить фото (админка)
 	})
 
 	// ── Bookings ────────────────────────────────────────────
-	bookingsRepo    := bookings.NewRepo(pool)
+	bookingsRepo := bookings.NewRepo(pool)
 	bookingsHandler := bookings.NewHandler(bookingsRepo)
 
 	r.Route("/api/bookings", func(r chi.Router) {
