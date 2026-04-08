@@ -3,6 +3,7 @@ package photos
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -14,78 +15,113 @@ func NewRepo(pool *pgxpool.Pool) *Repo {
 	return &Repo{pool: pool}
 }
 
-// List возвращает все фото, отсортированные по sort_order
-func (r *Repo) List(ctx context.Context) ([]Photo, error) {
+// ListByAlbumSlug возвращает все фото конкретного альбома по slug
+func (r *Repo) ListByAlbumSlug(ctx context.Context, slug string) ([]Photo, error) {
 	rows, err := r.pool.Query(ctx, `
-		SELECT id, title, album, description, url, sort_order, created_at::text
-		FROM photos
-		ORDER BY sort_order ASC, created_at DESC
-	`)
+		SELECT
+			p.id,
+			p.album_id,
+			p.title,
+			p.description,
+			p.image_url,
+			p.thumb_url,
+			p.sort_order,
+			p.created_at::text
+		FROM photos_v2 p
+		JOIN albums a ON a.id = p.album_id
+		WHERE a.slug = $1
+		ORDER BY p.sort_order ASC, p.created_at ASC
+	`, slug)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	var out []Photo
+
 	for rows.Next() {
 		var p Photo
+
 		if err := rows.Scan(
-			&p.ID, &p.Title, &p.Album,
-			&p.Description, &p.URL,
-			&p.SortOrder, &p.CreatedAt,
+			&p.ID,
+			&p.AlbumID,
+			&p.Title,
+			&p.Description,
+			&p.ImageURL,
+			&p.ThumbURL,
+			&p.SortOrder,
+			&p.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
+
 		out = append(out, p)
 	}
+
 	return out, rows.Err()
 }
 
-// ByAlbum возвращает фото конкретного альбома
-func (r *Repo) ByAlbum(ctx context.Context, album string) ([]Photo, error) {
-	rows, err := r.pool.Query(ctx, `
-		SELECT id, title, album, description, url, sort_order, created_at::text
-		FROM photos
-		WHERE album = $1
-		ORDER BY sort_order ASC, created_at DESC
-	`, album)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var out []Photo
-	for rows.Next() {
-		var p Photo
-		if err := rows.Scan(
-			&p.ID, &p.Title, &p.Album,
-			&p.Description, &p.URL,
-			&p.SortOrder, &p.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
-		out = append(out, p)
-	}
-	return out, rows.Err()
-}
-
-// Create добавляет новое фото (для админки)
-func (r *Repo) Create(ctx context.Context, in CreatePhotoInput) (Photo, error) {
+// CreateByAlbumSlug создаёт фото внутри альбома по slug
+func (r *Repo) CreateByAlbumSlug(ctx context.Context, slug string, in CreatePhotoInput) (Photo, error) {
 	var p Photo
+
 	err := r.pool.QueryRow(ctx, `
-		INSERT INTO photos (title, album, description, url, sort_order)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, title, album, description, url, sort_order, created_at::text
-	`, in.Title, in.Album, in.Description, in.URL, in.SortOrder).Scan(
-		&p.ID, &p.Title, &p.Album,
-		&p.Description, &p.URL,
-		&p.SortOrder, &p.CreatedAt,
+		INSERT INTO photos_v2 (
+			album_id,
+			title,
+			description,
+			image_url,
+			thumb_url,
+			sort_order
+		)
+		VALUES (
+			(SELECT id FROM albums WHERE slug = $1),
+			$2, $3, $4, $5, $6
+		)
+		RETURNING
+			id,
+			album_id,
+			title,
+			description,
+			image_url,
+			thumb_url,
+			sort_order,
+			created_at::text
+	`,
+		slug,
+		in.Title,
+		in.Description,
+		in.ImageURL,
+		in.ThumbURL,
+		in.SortOrder,
+	).Scan(
+		&p.ID,
+		&p.AlbumID,
+		&p.Title,
+		&p.Description,
+		&p.ImageURL,
+		&p.ThumbURL,
+		&p.SortOrder,
+		&p.CreatedAt,
 	)
+
 	return p, err
 }
 
-// Delete удаляет фото по ID
+// Delete удаляет фото по id
 func (r *Repo) Delete(ctx context.Context, id string) error {
-	_, err := r.pool.Exec(ctx, `DELETE FROM photos WHERE id = $1`, id)
-	return err
+	cmd, err := r.pool.Exec(ctx, `
+		DELETE FROM photos_v2
+		WHERE id = $1
+	`, id)
+	if err != nil {
+		return err
+	}
+
+	// если ни одна строка не удалена, значит такого id не было
+	if cmd.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+
+	return nil
 }

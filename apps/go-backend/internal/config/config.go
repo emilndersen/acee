@@ -3,8 +3,9 @@ package config
 import "os"
 
 type Config struct {
-	Port        string
-	DatabaseURL string
+	Port          string
+	DatabaseURL   string
+	AdminAPIToken string
 }
 
 func Load() Config {
@@ -14,7 +15,8 @@ func Load() Config {
 	}
 
 	return Config{
-		Port:        port,
-		DatabaseURL: os.Getenv("DATABASE_URL"),
+		Port:          port,
+		DatabaseURL:   os.Getenv("DATABASE_URL"),
+		AdminAPIToken: os.Getenv("ADMIN_API_TOKEN"),
 	}
 }

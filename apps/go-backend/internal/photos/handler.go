@@ -2,9 +2,12 @@ package photos
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
 )
 
 type Handler struct {
@@ -15,36 +18,15 @@ func NewHandler(repo *Repo) *Handler {
 	return &Handler{repo: repo}
 }
 
-// List — GET /api/photos
-// Возвращает все фото
-func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
-	photos, err := h.repo.List(r.Context())
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+// ListByAlbumSlug — GET /api/albums/{slug}/photos
+func (h *Handler) ListByAlbumSlug(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+	if slug == "" {
+		writeError(w, http.StatusBadRequest, "slug is required")
 		return
 	}
 
-	// если фото ещё нет — вернём пустой массив, не null
-	if photos == nil {
-		photos = []Photo{}
-	}
-
-	writeJSON(w, http.StatusOK, map[string]any{
-		"ok":     true,
-		"photos": photos,
-	})
-}
-
-// ByAlbum — GET /api/photos/{album}
-// Возвращает фото конкретного альбома
-func (h *Handler) ByAlbum(w http.ResponseWriter, r *http.Request) {
-	album := chi.URLParam(r, "album") // читаем {album} из URL
-	if album == "" {
-		writeError(w, http.StatusBadRequest, "album is required")
-		return
-	}
-
-	photos, err := h.repo.ByAlbum(r.Context(), album)
+	photos, err := h.repo.ListByAlbumSlug(r.Context(), slug)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -56,26 +38,36 @@ func (h *Handler) ByAlbum(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":     true,
-		"album":  album,
+		"slug":   slug,
 		"photos": photos,
 	})
 }
 
-// Create — POST /api/photos (только для админки)
-func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
+// CreateByAlbumSlug — POST /api/albums/{slug}/photos
+func (h *Handler) CreateByAlbumSlug(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+	if slug == "" {
+		writeError(w, http.StatusBadRequest, "slug is required")
+		return
+	}
+
 	var input CreatePhotoInput
-
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid json")
 		return
 	}
 
-	if input.URL == "" {
-		writeError(w, http.StatusBadRequest, "url is required")
+	input.Title = strings.TrimSpace(input.Title)
+	input.Description = strings.TrimSpace(input.Description)
+	input.ImageURL = strings.TrimSpace(input.ImageURL)
+	input.ThumbURL = strings.TrimSpace(input.ThumbURL)
+
+	if input.ImageURL == "" {
+		writeError(w, http.StatusBadRequest, "image_url is required")
 		return
 	}
 
-	photo, err := h.repo.Create(r.Context(), input)
+	photo, err := h.repo.CreateByAlbumSlug(r.Context(), slug, input)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -83,24 +75,9 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusCreated, map[string]any{
 		"ok":    true,
+		"slug":  slug,
 		"photo": photo,
 	})
-}
-
-// Delete — DELETE /api/photos/{id}
-func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	if id == "" {
-		writeError(w, http.StatusBadRequest, "id is required")
-		return
-	}
-
-	if err := h.repo.Delete(r.Context(), id); err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
@@ -113,5 +90,29 @@ func writeError(w http.ResponseWriter, status int, msg string) {
 	writeJSON(w, status, map[string]any{
 		"ok":    false,
 		"error": msg,
+	})
+}
+
+// Delete — DELETE /api/photos/{id}
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "id is required")
+		return
+	}
+
+	err := h.repo.Delete(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			writeError(w, http.StatusNotFound, "photo not found")
+			return
+		}
+
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok": true,
 	})
 }

@@ -9,29 +9,28 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/emilndersen/acee/apps/go-backend/internal/albums"
 	"github.com/emilndersen/acee/apps/go-backend/internal/bookings"
+	"github.com/emilndersen/acee/apps/go-backend/internal/config"
 	"github.com/emilndersen/acee/apps/go-backend/internal/photos"
 	"github.com/emilndersen/acee/apps/go-backend/internal/users"
 )
 
-func NewRouter(pool *pgxpool.Pool) http.Handler {
+func NewRouter(pool *pgxpool.Pool, cfg config.Config) http.Handler {
 	r := chi.NewRouter()
 
-	// ── Middleware ──────────────────────────────────────────
-	r.Use(middleware.Logger)    // логирует каждый запрос в консоль
-	r.Use(middleware.Recoverer) // не падает если handler паникует
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
-	// CORS — разрешает фронту на localhost:5173 обращаться к бэку
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{
-			"http://localhost:5173", // Vite dev server
-			"https://*.railway.app", // продакшн
+			"http://localhost:5173",
+			"https://*.railway.app",
 		},
 		AllowedMethods: []string{"GET", "POST", "DELETE", "OPTIONS"},
-		AllowedHeaders: []string{"Content-Type"},
+		AllowedHeaders: []string{"Content-Type", "Authorization"},
 	}))
 
-	// ── Health ──────────────────────────────────────────────
 	r.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 	})
@@ -44,7 +43,6 @@ func NewRouter(pool *pgxpool.Pool) http.Handler {
 		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "db": "connected"})
 	})
 
-	// ── Users ───────────────────────────────────────────────
 	usersRepo := users.NewRepo(pool)
 	usersHandler := users.NewHandler(usersRepo)
 
@@ -53,24 +51,28 @@ func NewRouter(pool *pgxpool.Pool) http.Handler {
 		r.Post("/", usersHandler.Create)
 	})
 
-	// ── Photos ──────────────────────────────────────────────
+	albumsRepo := albums.NewRepo(pool)
+	albumsHandler := albums.NewHandler(albumsRepo)
+
 	photosRepo := photos.NewRepo(pool)
 	photosHandler := photos.NewHandler(photosRepo)
 
-	r.Route("/api/photos", func(r chi.Router) {
-		r.Get("/", photosHandler.List)           // все фото
-		r.Post("/", photosHandler.Create)        // добавить фото (админка)
-		r.Get("/{album}", photosHandler.ByAlbum) // фото по альбому
-		r.Delete("/{id}", photosHandler.Delete)  // удалить фото (админка)
-	})
+	r.Route("/api/albums", func(r chi.Router) {
+		r.Get("/", albumsHandler.List)
+		r.Get("/{slug}", albumsHandler.BySlug)
+		r.Get("/{slug}/photos", photosHandler.ListByAlbumSlug)
 
-	// ── Bookings ────────────────────────────────────────────
+		r.With(AdminOnly(cfg.AdminAPIToken)).Post("/", albumsHandler.Create)
+		r.With(AdminOnly(cfg.AdminAPIToken)).Post("/{slug}/photos", photosHandler.CreateByAlbumSlug)
+	})
+	r.With(AdminOnly(cfg.AdminAPIToken)).Delete("/api/photos/{id}", photosHandler.Delete)
+
 	bookingsRepo := bookings.NewRepo(pool)
 	bookingsHandler := bookings.NewHandler(bookingsRepo)
 
 	r.Route("/api/bookings", func(r chi.Router) {
-		r.Post("/", bookingsHandler.Create) // форма с фронта
-		r.Get("/", bookingsHandler.List)    // список заявок (админка)
+		r.Post("/", bookingsHandler.Create)
+		r.With(AdminOnly(cfg.AdminAPIToken)).Get("/", bookingsHandler.List)
 	})
 
 	return r

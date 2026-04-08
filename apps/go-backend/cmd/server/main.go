@@ -22,7 +22,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	router := httpapi.NewRouter(pool)
+	router := httpapi.NewRouter(pool, cfg)
 
 	log.Println("Go backend running on :" + cfg.Port)
 	log.Fatal(http.ListenAndServe(":"+cfg.Port, router))

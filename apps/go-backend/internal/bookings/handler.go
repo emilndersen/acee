@@ -3,6 +3,7 @@ package bookings
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 )
 
 type Handler struct {
@@ -23,9 +24,24 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// валидация обязательных полей
-	if input.Name == "" || input.Contact == "" {
-		writeError(w, http.StatusBadRequest, "name and contact are required")
+	input.Name = strings.TrimSpace(input.Name)
+	input.Contact = strings.TrimSpace(input.Contact)
+	input.ShootType = strings.TrimSpace(input.ShootType)
+	input.Date = strings.TrimSpace(input.Date)
+	input.Idea = strings.TrimSpace(input.Idea)
+
+	if input.Name == "" {
+		writeError(w, http.StatusBadRequest, "name is required")
+		return
+	}
+
+	if input.Contact == "" {
+		writeError(w, http.StatusBadRequest, "contact is required")
+		return
+	}
+
+	if input.ShootType == "" {
+		writeError(w, http.StatusBadRequest, "shoot_type is required")
 		return
 	}
 
