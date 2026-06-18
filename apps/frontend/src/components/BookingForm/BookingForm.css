@@ -7,16 +7,18 @@
 
 .booking-title {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(40px, 7vw, 96px);
+  font-size: clamp(48px, 8vw, 110px);
   letter-spacing: 8px;
   color: var(--white);
   margin-bottom: 16px;
   line-height: 1;
-
-  /* scroll reveal defaults */
   opacity: 0;
   transform: translateY(30px);
   transition: opacity 0.9s ease, transform 0.9s ease;
+}
+
+.booking-title:hover {
+  animation: glitch 0.3s ease-in-out;
 }
 
 .booking-title.visible {
@@ -25,7 +27,7 @@
 }
 
 .booking-subtitle {
-  font-size: 16px;
+  font-size: 18px;
   font-style: italic;
   color: var(--dust);
   margin-bottom: 60px;
@@ -67,7 +69,7 @@
 
 .form-label {
   font-family: 'Space Mono', monospace;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 4px;
   text-transform: uppercase;
   color: var(--grey);
@@ -79,12 +81,12 @@
   background: transparent;
   border: none;
   border-bottom: 1px solid rgba(200, 0, 26, 0.25);
-  padding: 12px 0;
+  padding: 14px 0;
   color: var(--cream);
   font-family: 'Cormorant Garamond', serif;
-  font-size: 16px;
+  font-size: 18px;
   outline: none;
-  transition: border-color 0.3s;
+  transition: border-color 0.3s, box-shadow 0.3s;
   cursor: none;
 }
 
@@ -92,6 +94,7 @@
 .form-textarea:focus,
 .form-select:focus {
   border-color: var(--red);
+  box-shadow: 0 4px 12px rgba(200,0,26,0.15);
 }
 
 .form-select option { background: var(--deep); }
@@ -110,16 +113,16 @@
 
 .btn-book {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 18px;
+  font-size: 20px;
   letter-spacing: 6px;
   color: var(--black);
   background: var(--cream);
   border: none;
-  padding: 18px 64px;
+  padding: 20px 72px;
   cursor: none;
   position: relative;
   overflow: hidden;
-  transition: color 0.4s;
+  transition: color 0.4s, box-shadow 0.4s;
 }
 
 .btn-book::before {
@@ -134,15 +137,19 @@
 }
 
 .btn-book:hover::before { transform: scaleX(1); }
-.btn-book:hover { color: var(--white); }
+.btn-book:hover {
+  color: var(--white);
+  box-shadow: 0 0 30px rgba(200,0,26,0.4);
+}
 .btn-book span { position: relative; z-index: 1; }
 
 .booking-success {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 24px;
+  font-size: 28px;
   letter-spacing: 4px;
   color: var(--red);
   padding: 60px 0;
+  text-shadow: 0 0 20px rgba(200,0,26,0.4);
 }
 
 @media (max-width: 768px) {

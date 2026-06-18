@@ -1,20 +1,25 @@
-import './Nav.css'
-
-const links = [
-  { label: 'Главная', href: '#home' },
-  { label: 'Портфолио', href: '#portfolio' },
-  { label: 'Инфо', href: '#info' },
-  { label: 'Контакты', href: '#contacts' },
-]
+import { Link, useLocation } from "react-router-dom";
+import "./Nav.css";
 
 export default function Nav() {
+  const { pathname } = useLocation();
+  const isHome = pathname === "/";
+
+  function scrollTo(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  }
+
   return (
     <nav className="nav">
-      {links.map((link) => (
-        <a key={link.href} className="nav-link" href={link.href}>
-          {link.label}
-        </a>
-      ))}
+      {isHome ? (
+        <>
+          <a className="nav-link" href="#portfolio" onClick={(e) => { e.preventDefault(); scrollTo("portfolio"); }}>Portfolio</a>
+          <a className="nav-link" href="#booking" onClick={(e) => { e.preventDefault(); scrollTo("booking"); }}>Booking</a>
+        </>
+      ) : (
+        <Link className="nav-link" to="/">Home</Link>
+      )}
     </nav>
-  )
+  );
 }

@@ -11,13 +11,13 @@
 
 .nav-link {
   font-family: 'Space Mono', monospace;
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 3px;
   text-transform: uppercase;
   color: var(--cream);
   text-decoration: none;
   opacity: 0.7;
-  transition: opacity 0.3s, color 0.3s;
+  transition: opacity 0.3s, color 0.3s, text-shadow 0.3s;
   position: relative;
 }
 
@@ -27,14 +27,16 @@
   bottom: -3px;
   left: 0;
   width: 0;
-  height: 1px;
+  height: 2px;
   background: var(--red);
   transition: width 0.3s;
+  box-shadow: 0 0 8px var(--red);
 }
 
 .nav-link:hover {
   opacity: 1;
   color: var(--white);
+  text-shadow: 0 0 12px rgba(200,0,26,0.5);
 }
 
 .nav-link:hover::after {
@@ -46,8 +48,7 @@
     gap: 20px;
     padding: 20px 24px;
   }
-
   .nav-link {
-    font-size: 9px;
+    font-size: 11px;
   }
 }

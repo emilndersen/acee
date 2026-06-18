@@ -55,7 +55,7 @@ const handleSubmit = async (e) => {
 }
 
   return (
-    <section className="booking">
+    <section className="booking" id="booking">
       <div className="booking-title reveal" ref={titleRef}>
         ЗАПИСАТЬСЯ<br />НА СЪЁМКУ
       </div>

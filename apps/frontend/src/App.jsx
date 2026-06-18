@@ -1,34 +1,18 @@
-
-import './styles/globals.css'
-
-import Cursor      from './components/Cursor/Cursor'
-import Nav         from './components/Nav/Nav'
-import Hero        from './components/Hero/Hero'
-import Portfolio   from './components/Portfolio/Portfolio'
-import BookingForm from './components/BookingForm/BookingForm'
-import Contacts    from './components/Contacts/Contacts'
+import { Routes, Route } from "react-router-dom";
+import Cursor from "./components/Cursor/Cursor";
+import Nav from "./components/Nav/Nav";
+import Home from "./pages/Home";
+import AlbumPage from "./pages/AlbumPage";
 
 export default function App() {
   return (
     <>
-      {/* Utilities */}
       <Cursor />
       <Nav />
-
-      {/* Sections */}
-      <Hero />
-
-      <div className="divider" />
-
-      <Portfolio />
-
-      <div className="divider" />
-
-      <BookingForm />
-
-      <div className="divider" />
-
-      <Contacts />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/albums/:slug" element={<AlbumPage />} />
+      </Routes>
     </>
-  )
+  );
 }
