@@ -3,9 +3,10 @@ package config
 import "os"
 
 type Config struct {
-	Port          string
-	DatabaseURL   string
-	AdminAPIToken string
+	Port        string
+	DatabaseURL string
+	JWTSecret   string
+	UploadDir   string
 }
 
 func Load() Config {
@@ -14,9 +15,20 @@ func Load() Config {
 		port = "3001"
 	}
 
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "dev-secret-change-me"
+	}
+
+	uploadDir := os.Getenv("UPLOAD_DIR")
+	if uploadDir == "" {
+		uploadDir = "./uploads"
+	}
+
 	return Config{
-		Port:          port,
-		DatabaseURL:   os.Getenv("DATABASE_URL"),
-		AdminAPIToken: os.Getenv("ADMIN_API_TOKEN"),
+		Port:        port,
+		DatabaseURL: os.Getenv("DATABASE_URL"),
+		JWTSecret:   jwtSecret,
+		UploadDir:   uploadDir,
 	}
 }

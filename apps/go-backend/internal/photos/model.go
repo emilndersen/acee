@@ -18,3 +18,9 @@ type CreatePhotoInput struct {
 	ThumbURL    string `json:"thumb_url"`
 	SortOrder   int    `json:"sort_order"`
 }
+
+type UpdatePhotoInput struct {
+	Title       *string `json:"title"`
+	Description *string `json:"description"`
+	SortOrder   *int    `json:"sort_order"`
+}

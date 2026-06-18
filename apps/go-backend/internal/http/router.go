@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -10,10 +9,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/emilndersen/acee/apps/go-backend/internal/albums"
+	"github.com/emilndersen/acee/apps/go-backend/internal/auth"
 	"github.com/emilndersen/acee/apps/go-backend/internal/bookings"
 	"github.com/emilndersen/acee/apps/go-backend/internal/config"
 	"github.com/emilndersen/acee/apps/go-backend/internal/photos"
-	"github.com/emilndersen/acee/apps/go-backend/internal/users"
+	"github.com/emilndersen/acee/apps/go-backend/internal/response"
+	"github.com/emilndersen/acee/apps/go-backend/internal/settings"
+	"github.com/emilndersen/acee/apps/go-backend/internal/upload"
 )
 
 func NewRouter(pool *pgxpool.Pool, cfg config.Config) http.Handler {
@@ -25,32 +27,45 @@ func NewRouter(pool *pgxpool.Pool, cfg config.Config) http.Handler {
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{
 			"http://localhost:5173",
+			"http://localhost:5174",
 			"https://*.railway.app",
 		},
-		AllowedMethods: []string{"GET", "POST", "DELETE", "OPTIONS"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders: []string{"Content-Type", "Authorization"},
 	}))
 
 	r.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+		response.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
 	})
 
 	r.Get("/health/db", func(w http.ResponseWriter, req *http.Request) {
 		if err := pool.Ping(req.Context()); err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
+			response.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "db": "connected"})
+		response.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "db": "connected"})
 	})
 
-	usersRepo := users.NewRepo(pool)
-	usersHandler := users.NewHandler(usersRepo)
+	// Static files (uploads)
+	fileServer := http.FileServer(http.Dir(cfg.UploadDir))
+	r.Handle("/uploads/*", http.StripPrefix("/uploads/", fileServer))
 
-	r.Route("/api/users", func(r chi.Router) {
-		r.Get("/", usersHandler.List)
-		r.Post("/", usersHandler.Create)
+	// Auth
+	authRepo := auth.NewRepo(pool)
+	authHandler := auth.NewHandler(authRepo, cfg.JWTSecret)
+
+	r.Route("/api/auth", func(r chi.Router) {
+		r.Post("/login", authHandler.Login)
+		r.Post("/refresh", authHandler.Refresh)
+		r.With(AdminOnly(cfg.JWTSecret)).Get("/me", authHandler.Me)
+		r.With(AdminOnly(cfg.JWTSecret)).Post("/change-password", authHandler.ChangePassword)
 	})
 
+	// Upload
+	uploadHandler := upload.NewHandler(cfg.UploadDir)
+	r.With(AdminOnly(cfg.JWTSecret)).Post("/api/upload", uploadHandler.Upload)
+
+	// Albums
 	albumsRepo := albums.NewRepo(pool)
 	albumsHandler := albums.NewHandler(albumsRepo)
 
@@ -62,31 +77,34 @@ func NewRouter(pool *pgxpool.Pool, cfg config.Config) http.Handler {
 		r.Get("/{slug}", albumsHandler.BySlug)
 		r.Get("/{slug}/photos", photosHandler.ListByAlbumSlug)
 
-		r.With(AdminOnly(cfg.AdminAPIToken)).Post("/", albumsHandler.Create)
-		r.With(AdminOnly(cfg.AdminAPIToken)).Post("/{slug}/photos", photosHandler.CreateByAlbumSlug)
+		r.With(AdminOnly(cfg.JWTSecret)).Post("/", albumsHandler.Create)
+		r.With(AdminOnly(cfg.JWTSecret)).Put("/{slug}", albumsHandler.Update)
+		r.With(AdminOnly(cfg.JWTSecret)).Delete("/{slug}", albumsHandler.Delete)
+		r.With(AdminOnly(cfg.JWTSecret)).Post("/{slug}/photos", photosHandler.CreateByAlbumSlug)
 	})
-	r.With(AdminOnly(cfg.AdminAPIToken)).Delete("/api/photos/{id}", photosHandler.Delete)
 
+	r.With(AdminOnly(cfg.JWTSecret)).Put("/api/photos/{id}", photosHandler.Update)
+	r.With(AdminOnly(cfg.JWTSecret)).Delete("/api/photos/{id}", photosHandler.Delete)
+
+	// Bookings
 	bookingsRepo := bookings.NewRepo(pool)
 	bookingsHandler := bookings.NewHandler(bookingsRepo)
 
 	r.Route("/api/bookings", func(r chi.Router) {
 		r.Post("/", bookingsHandler.Create)
-		r.With(AdminOnly(cfg.AdminAPIToken)).Get("/", bookingsHandler.List)
+		r.With(AdminOnly(cfg.JWTSecret)).Get("/", bookingsHandler.List)
+		r.With(AdminOnly(cfg.JWTSecret)).Patch("/{id}/status", bookingsHandler.UpdateStatus)
+		r.With(AdminOnly(cfg.JWTSecret)).Delete("/{id}", bookingsHandler.Delete)
+	})
+
+	// Site settings
+	settingsRepo := settings.NewRepo(pool)
+	settingsHandler := settings.NewHandler(settingsRepo)
+
+	r.Route("/api/settings", func(r chi.Router) {
+		r.Get("/", settingsHandler.List)
+		r.With(AdminOnly(cfg.JWTSecret)).Put("/", settingsHandler.Update)
 	})
 
 	return r
-}
-
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(v)
-}
-
-func writeError(w http.ResponseWriter, status int, msg string) {
-	writeJSON(w, status, map[string]any{
-		"ok":    false,
-		"error": msg,
-	})
 }

@@ -2,8 +2,14 @@ package bookings
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
+
+	"github.com/emilndersen/acee/apps/go-backend/internal/response"
 )
 
 type Handler struct {
@@ -14,13 +20,10 @@ func NewHandler(repo *Repo) *Handler {
 	return &Handler{repo: repo}
 }
 
-// Create — POST /api/bookings
-// Принимает заявку на съёмку с фронта
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	var input CreateBookingInput
-
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid json")
+		response.WriteError(w, http.StatusBadRequest, "invalid json")
 		return
 	}
 
@@ -31,37 +34,34 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	input.Idea = strings.TrimSpace(input.Idea)
 
 	if input.Name == "" {
-		writeError(w, http.StatusBadRequest, "name is required")
+		response.WriteError(w, http.StatusBadRequest, "name is required")
 		return
 	}
-
 	if input.Contact == "" {
-		writeError(w, http.StatusBadRequest, "contact is required")
+		response.WriteError(w, http.StatusBadRequest, "contact is required")
 		return
 	}
-
 	if input.ShootType == "" {
-		writeError(w, http.StatusBadRequest, "shoot_type is required")
+		response.WriteError(w, http.StatusBadRequest, "shoot_type is required")
 		return
 	}
 
 	booking, err := h.repo.Create(r.Context(), input)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		response.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, map[string]any{
+	response.WriteJSON(w, http.StatusCreated, map[string]any{
 		"ok":      true,
 		"booking": booking,
 	})
 }
 
-// List — GET /api/bookings (для админки)
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	bookings, err := h.repo.List(r.Context())
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		response.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -69,21 +69,70 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		bookings = []Booking{}
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{
+	response.WriteJSON(w, http.StatusOK, map[string]any{
 		"ok":       true,
 		"bookings": bookings,
 	})
 }
 
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(v)
+var validStatuses = map[string]bool{
+	"new":       true,
+	"confirmed": true,
+	"completed": true,
+	"cancelled": true,
 }
 
-func writeError(w http.ResponseWriter, status int, msg string) {
-	writeJSON(w, status, map[string]any{
-		"ok":    false,
-		"error": msg,
+func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		response.WriteError(w, http.StatusBadRequest, "id is required")
+		return
+	}
+
+	var input UpdateStatusInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.WriteError(w, http.StatusBadRequest, "invalid json")
+		return
+	}
+
+	input.Status = strings.TrimSpace(strings.ToLower(input.Status))
+	if !validStatuses[input.Status] {
+		response.WriteError(w, http.StatusBadRequest, "status must be one of: new, confirmed, completed, cancelled")
+		return
+	}
+
+	booking, err := h.repo.UpdateStatus(r.Context(), id, input.Status)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			response.WriteError(w, http.StatusNotFound, "booking not found")
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.WriteJSON(w, http.StatusOK, map[string]any{
+		"ok":      true,
+		"booking": booking,
 	})
+}
+
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		response.WriteError(w, http.StatusBadRequest, "id is required")
+		return
+	}
+
+	err := h.repo.Delete(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			response.WriteError(w, http.StatusNotFound, "booking not found")
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
 }

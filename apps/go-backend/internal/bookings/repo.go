@@ -3,6 +3,7 @@ package bookings
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -14,25 +15,23 @@ func NewRepo(pool *pgxpool.Pool) *Repo {
 	return &Repo{pool: pool}
 }
 
-// Create сохраняет новую заявку на съёмку
+const selectColumns = `id, name, contact, shoot_type, date, idea, COALESCE(status, 'new'), created_at::text`
+
 func (r *Repo) Create(ctx context.Context, in CreateBookingInput) (Booking, error) {
 	var b Booking
 	err := r.pool.QueryRow(ctx, `
 		INSERT INTO bookings (name, contact, shoot_type, date, idea)
 		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, name, contact, shoot_type, date, idea, created_at::text
+		RETURNING `+selectColumns+`
 	`, in.Name, in.Contact, in.ShootType, in.Date, in.Idea).Scan(
-		&b.ID, &b.Name, &b.Contact,
-		&b.ShootType, &b.Date, &b.Idea,
-		&b.CreatedAt,
+		&b.ID, &b.Name, &b.Contact, &b.ShootType, &b.Date, &b.Idea, &b.Status, &b.CreatedAt,
 	)
 	return b, err
 }
 
-// List возвращает все заявки (для админки)
 func (r *Repo) List(ctx context.Context) ([]Booking, error) {
 	rows, err := r.pool.Query(ctx, `
-		SELECT id, name, contact, shoot_type, date, idea, created_at::text
+		SELECT `+selectColumns+`
 		FROM bookings
 		ORDER BY created_at DESC
 	`)
@@ -45,13 +44,34 @@ func (r *Repo) List(ctx context.Context) ([]Booking, error) {
 	for rows.Next() {
 		var b Booking
 		if err := rows.Scan(
-			&b.ID, &b.Name, &b.Contact,
-			&b.ShootType, &b.Date, &b.Idea,
-			&b.CreatedAt,
+			&b.ID, &b.Name, &b.Contact, &b.ShootType, &b.Date, &b.Idea, &b.Status, &b.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
 		out = append(out, b)
 	}
 	return out, rows.Err()
+}
+
+func (r *Repo) UpdateStatus(ctx context.Context, id, status string) (Booking, error) {
+	var b Booking
+	err := r.pool.QueryRow(ctx, `
+		UPDATE bookings SET status = $1
+		WHERE id = $2
+		RETURNING `+selectColumns+`
+	`, status, id).Scan(
+		&b.ID, &b.Name, &b.Contact, &b.ShootType, &b.Date, &b.Idea, &b.Status, &b.CreatedAt,
+	)
+	return b, err
+}
+
+func (r *Repo) Delete(ctx context.Context, id string) error {
+	cmd, err := r.pool.Exec(ctx, `DELETE FROM bookings WHERE id = $1`, id)
+	if err != nil {
+		return err
+	}
+	if cmd.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
 }
