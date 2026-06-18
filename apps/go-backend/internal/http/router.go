@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"net/http"
+	"path/filepath"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -46,9 +47,16 @@ func NewRouter(pool *pgxpool.Pool, cfg config.Config) http.Handler {
 		response.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "db": "connected"})
 	})
 
-	// Static files (uploads)
-	fileServer := http.FileServer(http.Dir(cfg.UploadDir))
-	r.Handle("/uploads/*", http.StripPrefix("/uploads/", fileServer))
+	// Static uploads
+	uploadDir := cfg.UploadDir
+	if uploadDir == "" {
+		uploadDir = "./uploads"
+	}
+	absUpload, _ := filepath.Abs(uploadDir)
+	fs := http.StripPrefix("/uploads/", http.FileServer(http.Dir(absUpload)))
+	r.Get("/uploads/*", func(w http.ResponseWriter, r *http.Request) {
+		fs.ServeHTTP(w, r)
+	})
 
 	// Auth
 	authRepo := auth.NewRepo(pool)
@@ -58,11 +66,10 @@ func NewRouter(pool *pgxpool.Pool, cfg config.Config) http.Handler {
 		r.Post("/login", authHandler.Login)
 		r.Post("/refresh", authHandler.Refresh)
 		r.With(AdminOnly(cfg.JWTSecret)).Get("/me", authHandler.Me)
-		r.With(AdminOnly(cfg.JWTSecret)).Post("/change-password", authHandler.ChangePassword)
 	})
 
 	// Upload
-	uploadHandler := upload.NewHandler(cfg.UploadDir)
+	uploadHandler := upload.NewHandler(absUpload)
 	r.With(AdminOnly(cfg.JWTSecret)).Post("/api/upload", uploadHandler.Upload)
 
 	// Albums
@@ -97,7 +104,7 @@ func NewRouter(pool *pgxpool.Pool, cfg config.Config) http.Handler {
 		r.With(AdminOnly(cfg.JWTSecret)).Delete("/{id}", bookingsHandler.Delete)
 	})
 
-	// Site settings
+	// Settings
 	settingsRepo := settings.NewRepo(pool)
 	settingsHandler := settings.NewHandler(settingsRepo)
 
