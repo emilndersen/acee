@@ -6,7 +6,7 @@ export default function Portfolio() {
   const [albums, setAlbums] = useState([])
   const [categories, setCategories] = useState([])
   const [activeCategory, setActiveCategory] = useState(null)
-  const itemRefs = useRef([])
+  const gridRef = useRef(null)
 
   useEffect(() => {
     fetch('/api/albums')
@@ -21,21 +21,24 @@ export default function Portfolio() {
   }, [])
 
   useEffect(() => {
-    const observers = itemRefs.current.map((el, i) => {
-      if (!el) return null
+    if (!gridRef.current) return
+    const items = gridRef.current.querySelectorAll('.portfolio__card')
+    const observers = []
+    items.forEach((el, i) => {
+      el.classList.remove('visible')
       const obs = new IntersectionObserver(
         ([entry]) => {
           if (entry.isIntersecting) {
-            setTimeout(() => el.classList.add('visible'), i * 80)
+            setTimeout(() => el.classList.add('visible'), i * 100)
             obs.unobserve(el)
           }
         },
         { threshold: 0.05 }
       )
       obs.observe(el)
-      return obs
+      observers.push(obs)
     })
-    return () => observers.forEach((o) => o?.disconnect())
+    return () => observers.forEach((o) => o.disconnect())
   }, [albums, activeCategory])
 
   const filtered = activeCategory
@@ -44,23 +47,20 @@ export default function Portfolio() {
 
   return (
     <section className="portfolio" id="portfolio">
-      <div className="section-header">
-        <h2 className="section-title">ПОРТФОЛИО</h2>
-        <span className="section-sub">Нажми на альбом → посмотреть фото</span>
-      </div>
+      <h2 className="portfolio__heading">Портфолио</h2>
 
       {categories.length > 0 && (
-        <div className="category-filters">
+        <div className="portfolio__filters">
           <button
-            className={`category-btn ${!activeCategory ? 'active' : ''}`}
+            className={`portfolio__filter ${!activeCategory ? 'portfolio__filter--active' : ''}`}
             onClick={() => setActiveCategory(null)}
           >
-            Все
+            All
           </button>
           {categories.map((cat) => (
             <button
               key={cat.id}
-              className={`category-btn ${activeCategory === cat.id ? 'active' : ''}`}
+              className={`portfolio__filter ${activeCategory === cat.id ? 'portfolio__filter--active' : ''}`}
               onClick={() => setActiveCategory(cat.id)}
             >
               {cat.name}
@@ -69,33 +69,27 @@ export default function Portfolio() {
         </div>
       )}
 
-      <div className="collage-grid">
-        {filtered.map((album, i) => (
+      <div className="portfolio__grid" ref={gridRef}>
+        {filtered.map((album) => (
           <Link
             key={album.id}
             to={`/albums/${album.slug}`}
-            className="collage-item"
-            ref={(el) => (itemRefs.current[i] = el)}
+            className="portfolio__card"
           >
             {album.cover_url ? (
-              <img src={album.cover_url} alt={album.title} loading="lazy" />
+              <img src={album.cover_url} alt={album.title} className="portfolio__img" loading="lazy" />
             ) : (
-              <div className="collage-placeholder" />
+              <div className="portfolio__img portfolio__img--empty" />
             )}
-            <div className="collage-overlay">
-              <div className="collage-info">
-                <div className="collage-info-title">{album.title}</div>
-                <span className="collage-info-link">Смотреть альбом →</span>
-              </div>
+            <div className="portfolio__overlay">
+              <span className="portfolio__label">{album.title}</span>
             </div>
           </Link>
         ))}
       </div>
 
       {filtered.length === 0 && (
-        <p style={{ textAlign: 'center', color: '#666', padding: '40px 0' }}>
-          Пока нет альбомов
-        </p>
+        <p className="portfolio__empty">Пока нет альбомов</p>
       )}
     </section>
   )

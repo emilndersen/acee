@@ -8,8 +8,8 @@ export default function Home() {
     <main>
       <Hero />
       <Portfolio />
-      <BookingForm />
       <Contacts />
+      <BookingForm />
     </main>
   );
 }
