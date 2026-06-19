@@ -33,6 +33,8 @@ export default function AlbumPage() {
 
   if (!album) return <div className="album-loading">Loading...</div>;
 
+  const current = lightboxIndex >= 0 ? photos[lightboxIndex] : null;
+
   return (
     <section className="album-page">
       <Link to="/" className="album-back">&larr; Back</Link>
@@ -42,16 +44,23 @@ export default function AlbumPage() {
       <div className="album-grid">
         {photos.map((p, i) => (
           <div key={p.id} className="album-grid__item" onClick={() => setLightboxIndex(i)}>
-            <img src={p.thumb_url || p.image_url} alt="" loading="lazy" />
+            {p.media_type === "video" ? (
+              <div className="album-grid__video-wrap">
+                <video src={p.image_url} muted preload="metadata" />
+                <div className="album-grid__play">&#9654;</div>
+              </div>
+            ) : (
+              <img src={p.thumb_url || p.image_url} alt="" loading="lazy" />
+            )}
           </div>
         ))}
       </div>
 
-      {photos.length === 0 && <p className="album-empty">No photos yet.</p>}
+      {photos.length === 0 && <p className="album-empty">No media yet.</p>}
 
-      {lightboxIndex >= 0 && (
+      {current && (
         <Lightbox
-          src={photos[lightboxIndex].image_url}
+          media={current}
           onClose={() => setLightboxIndex(-1)}
         />
       )}

@@ -17,11 +17,11 @@ func NewRepo(pool *pgxpool.Pool) *Repo {
 	return &Repo{pool: pool}
 }
 
-const selectColumns = `id, album_id, title, description, image_url, thumb_url, sort_order, created_at::text`
+const selectColumns = `id, album_id, title, description, image_url, thumb_url, media_type, sort_order, created_at::text`
 
 func scanPhoto(row interface{ Scan(dest ...any) error }) (Photo, error) {
 	var p Photo
-	err := row.Scan(&p.ID, &p.AlbumID, &p.Title, &p.Description, &p.ImageURL, &p.ThumbURL, &p.SortOrder, &p.CreatedAt)
+	err := row.Scan(&p.ID, &p.AlbumID, &p.Title, &p.Description, &p.ImageURL, &p.ThumbURL, &p.MediaType, &p.SortOrder, &p.CreatedAt)
 	return p, err
 }
 
@@ -50,11 +50,16 @@ func (r *Repo) ListByAlbumSlug(ctx context.Context, slug string) ([]Photo, error
 }
 
 func (r *Repo) CreateByAlbumSlug(ctx context.Context, slug string, in CreatePhotoInput) (Photo, error) {
+	mediaType := in.MediaType
+	if mediaType == "" {
+		mediaType = "image"
+	}
+
 	row := r.pool.QueryRow(ctx, `
-		INSERT INTO photos_v2 (album_id, title, description, image_url, thumb_url, sort_order)
-		VALUES ((SELECT id FROM albums WHERE slug = $1), $2, $3, $4, $5, $6)
+		INSERT INTO photos_v2 (album_id, title, description, image_url, thumb_url, media_type, sort_order)
+		VALUES ((SELECT id FROM albums WHERE slug = $1), $2, $3, $4, $5, $6, $7)
 		RETURNING `+selectColumns+`
-	`, slug, in.Title, in.Description, in.ImageURL, in.ThumbURL, in.SortOrder)
+	`, slug, in.Title, in.Description, in.ImageURL, in.ThumbURL, mediaType, in.SortOrder)
 	return scanPhoto(row)
 }
 
