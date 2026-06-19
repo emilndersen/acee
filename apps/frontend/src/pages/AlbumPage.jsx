@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useLang } from "../i18n/LangContext";
 import Lightbox from "../components/Lightbox/Lightbox";
 import "../styles/album-page.css";
 
 export default function AlbumPage() {
   const { slug } = useParams();
+  const { t } = useLang();
   const [album, setAlbum] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [lightboxIndex, setLightboxIndex] = useState(-1);
@@ -58,7 +60,7 @@ export default function AlbumPage() {
       setUnlocked(true);
       loadPhotos();
     } else {
-      setPwError("Wrong password");
+      setPwError(t.album.wrongPassword);
     }
   }
 
@@ -76,7 +78,7 @@ export default function AlbumPage() {
       const d = await fetch(`/api/reviews/album/${album.id}`).then((r) => r.json());
       setReviews(d.reviews || []);
     } catch {
-      alert("Не удалось отправить отзыв");
+      alert(t.album.reviewError);
     }
   }
 
@@ -93,19 +95,13 @@ export default function AlbumPage() {
   if (needsPassword) {
     return (
       <section className="album-page">
-        <Link to="/" className="album-back">&larr; Back</Link>
+        <Link to="/" className="album-back">{t.album.back}</Link>
         <h1 className="album-title">{album?.title || "Private Album"}</h1>
         <div className="album-password-form">
-          <p className="album-password-text">This album is password protected.</p>
+          <p className="album-password-text">{t.album.passwordText}</p>
           <form onSubmit={handleUnlock} className="album-password-fields">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
-              className="album-password-input"
-            />
-            <button type="submit" className="album-password-btn">Unlock</button>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t.album.passwordPlaceholder} className="album-password-input" />
+            <button type="submit" className="album-password-btn">{t.album.unlock}</button>
           </form>
           {pwError && <p className="album-password-error">{pwError}</p>}
         </div>
@@ -113,7 +109,7 @@ export default function AlbumPage() {
     );
   }
 
-  if (!album) return <div className="album-loading">Loading...</div>;
+  if (!album) return <div className="album-loading">{t.album.loading}</div>;
 
   const current = lightboxIndex >= 0 ? photos[lightboxIndex] : null;
   const downloadUrl = unlocked
@@ -123,9 +119,9 @@ export default function AlbumPage() {
   return (
     <section className="album-page">
       <div className="album-header">
-        <Link to="/" className="album-back">&larr; Back</Link>
+        <Link to="/" className="album-back">{t.album.back}</Link>
         {photos.length > 0 && (
-          <a href={downloadUrl} className="album-download">Download All</a>
+          <a href={downloadUrl} className="album-download">{t.album.download}</a>
         )}
       </div>
       <h1 className="album-title">{album.title}</h1>
@@ -146,14 +142,12 @@ export default function AlbumPage() {
         ))}
       </div>
 
-      {photos.length === 0 && <p className="album-empty">No media yet.</p>}
+      {photos.length === 0 && <p className="album-empty">{t.album.noMedia}</p>}
 
-      {current && (
-        <Lightbox media={current} onClose={() => setLightboxIndex(-1)} />
-      )}
+      {current && <Lightbox media={current} onClose={() => setLightboxIndex(-1)} />}
 
       <div className="album-reviews">
-        <h2 className="album-reviews__heading">Отзывы</h2>
+        <h2 className="album-reviews__heading">{t.album.reviews}</h2>
 
         {reviews.length > 0 && (
           <div className="album-reviews__list">
@@ -169,37 +163,18 @@ export default function AlbumPage() {
 
         {!reviewSent ? (
           <form className="album-reviews__form" onSubmit={handleReviewSubmit}>
-            <h3 className="album-reviews__form-title">Оставить отзыв</h3>
-            <input
-              className="album-reviews__input"
-              placeholder="Ваше имя"
-              value={reviewForm.author_name}
-              onChange={(e) => setReviewForm((f) => ({ ...f, author_name: e.target.value }))}
-              required
-            />
+            <h3 className="album-reviews__form-title">{t.album.leaveReview}</h3>
+            <input className="album-reviews__input" placeholder={t.album.reviewName} value={reviewForm.author_name} onChange={(e) => setReviewForm((f) => ({ ...f, author_name: e.target.value }))} required />
             <div className="album-reviews__rating-select">
               {[1, 2, 3, 4, 5].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  className={`album-reviews__star-btn ${reviewForm.rating >= n ? "active" : ""}`}
-                  onClick={() => setReviewForm((f) => ({ ...f, rating: n }))}
-                >
-                  ★
-                </button>
+                <button key={n} type="button" className={`album-reviews__star-btn ${reviewForm.rating >= n ? "active" : ""}`} onClick={() => setReviewForm((f) => ({ ...f, rating: n }))}>★</button>
               ))}
             </div>
-            <textarea
-              className="album-reviews__textarea"
-              placeholder="Ваш отзыв..."
-              value={reviewForm.text}
-              onChange={(e) => setReviewForm((f) => ({ ...f, text: e.target.value }))}
-              required
-            />
-            <button type="submit" className="album-reviews__submit">Отправить</button>
+            <textarea className="album-reviews__textarea" placeholder={t.album.reviewText} value={reviewForm.text} onChange={(e) => setReviewForm((f) => ({ ...f, text: e.target.value }))} required />
+            <button type="submit" className="album-reviews__submit">{t.album.reviewSubmit}</button>
           </form>
         ) : (
-          <p className="album-reviews__thanks">Спасибо за отзыв! ✦</p>
+          <p className="album-reviews__thanks">{t.album.reviewThanks}</p>
         )}
       </div>
     </section>

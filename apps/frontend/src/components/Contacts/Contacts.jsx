@@ -1,4 +1,5 @@
 import { useScrollReveal } from '../../hooks/useScrollReveal'
+import { useLang } from '../../i18n/LangContext'
 import './Contacts.css'
 
 const SOCIALS = [
@@ -9,11 +10,12 @@ const SOCIALS = [
 
 export default function Contacts() {
   const ref = useScrollReveal(0.1)
+  const { t } = useLang()
 
   return (
     <section className="contacts" id="contacts">
       <div className="contacts-left reveal" ref={ref}>
-        <h2 className="contacts-title">КОНТАКТЫ</h2>
+        <h2 className="contacts-title">{t.contacts.title}</h2>
 
         <div className="contact-item">
           <div className="contact-icon">✆</div>

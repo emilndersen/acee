@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { useLang } from '../../i18n/LangContext'
 import './Portfolio.css'
 
 export default function Portfolio() {
+  const { t } = useLang()
   const [albums, setAlbums] = useState([])
   const [categories, setCategories] = useState([])
   const [activeCategory, setActiveCategory] = useState(null)
@@ -47,7 +49,7 @@ export default function Portfolio() {
 
   return (
     <section className="portfolio" id="portfolio">
-      <h2 className="portfolio__heading">Портфолио</h2>
+      <h2 className="portfolio__heading">{t.portfolio.heading}</h2>
 
       {categories.length > 0 && (
         <div className="portfolio__filters">
@@ -55,7 +57,7 @@ export default function Portfolio() {
             className={`portfolio__filter ${!activeCategory ? 'portfolio__filter--active' : ''}`}
             onClick={() => setActiveCategory(null)}
           >
-            All
+            {t.portfolio.all}
           </button>
           {categories.map((cat) => (
             <button
@@ -89,7 +91,7 @@ export default function Portfolio() {
       </div>
 
       {filtered.length === 0 && (
-        <p className="portfolio__empty">Пока нет альбомов</p>
+        <p className="portfolio__empty">{t.portfolio.empty}</p>
       )}
     </section>
   )
