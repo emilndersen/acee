@@ -47,7 +47,6 @@ func NewRouter(pool *pgxpool.Pool, cfg config.Config) http.Handler {
 		response.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "db": "connected"})
 	})
 
-	// Static uploads
 	uploadDir := cfg.UploadDir
 	if uploadDir == "" {
 		uploadDir = "./uploads"
@@ -74,16 +73,20 @@ func NewRouter(pool *pgxpool.Pool, cfg config.Config) http.Handler {
 
 	// Albums
 	albumsRepo := albums.NewRepo(pool)
-	albumsHandler := albums.NewHandler(albumsRepo)
-
 	photosRepo := photos.NewRepo(pool)
+	albumsHandler := albums.NewHandler(albumsRepo, photosRepo, absUpload)
 	photosHandler := photos.NewHandler(photosRepo)
+
+	r.Get("/api/categories", albumsHandler.ListCategories)
 
 	r.Route("/api/albums", func(r chi.Router) {
 		r.Get("/", albumsHandler.List)
 		r.Get("/{slug}", albumsHandler.BySlug)
+		r.Post("/{slug}/access", albumsHandler.CheckPassword)
 		r.Get("/{slug}/photos", photosHandler.ListByAlbumSlug)
+		r.Get("/{slug}/download", albumsHandler.DownloadZip)
 
+		r.With(AdminOnly(cfg.JWTSecret)).Get("/admin/list", albumsHandler.ListAdmin)
 		r.With(AdminOnly(cfg.JWTSecret)).Post("/", albumsHandler.Create)
 		r.With(AdminOnly(cfg.JWTSecret)).Put("/{slug}", albumsHandler.Update)
 		r.With(AdminOnly(cfg.JWTSecret)).Delete("/{slug}", albumsHandler.Delete)
@@ -92,6 +95,7 @@ func NewRouter(pool *pgxpool.Pool, cfg config.Config) http.Handler {
 
 	r.With(AdminOnly(cfg.JWTSecret)).Put("/api/photos/{id}", photosHandler.Update)
 	r.With(AdminOnly(cfg.JWTSecret)).Delete("/api/photos/{id}", photosHandler.Delete)
+	r.With(AdminOnly(cfg.JWTSecret)).Patch("/api/photos/{id}/order", photosHandler.UpdateOrder)
 
 	// Bookings
 	bookingsRepo := bookings.NewRepo(pool)

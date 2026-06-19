@@ -3,15 +3,39 @@
   padding: 120px 5vw 80px;
 }
 
+.album-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
 .album-back {
   display: inline-block;
   color: var(--red);
   text-decoration: none;
   font-size: 14px;
-  margin-bottom: 24px;
   transition: color 0.2s;
 }
 .album-back:hover { color: var(--red-bright); }
+
+.album-download {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cream);
+  text-decoration: none;
+  padding: 10px 24px;
+  border: 1px solid rgba(255,255,255,0.15);
+  transition: all 0.3s;
+}
+
+.album-download:hover {
+  border-color: var(--red);
+  color: var(--red);
+  box-shadow: 0 0 16px rgba(200,0,26,0.2);
+}
 
 .album-title {
   font-size: clamp(32px, 5vw, 56px);
@@ -86,4 +110,59 @@
   color: #666;
   text-align: center;
   padding: 80px 0;
+}
+
+/* Password form */
+.album-password-form {
+  max-width: 400px;
+  margin: 60px 0;
+}
+
+.album-password-text {
+  color: var(--dust);
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.album-password-fields {
+  display: flex;
+  gap: 12px;
+}
+
+.album-password-input {
+  flex: 1;
+  padding: 12px 16px;
+  background: transparent;
+  border: 1px solid rgba(200,0,26,0.3);
+  color: var(--cream);
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.album-password-input:focus {
+  border-color: var(--red);
+}
+
+.album-password-btn {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px;
+  letter-spacing: 3px;
+  padding: 12px 32px;
+  background: var(--red);
+  color: var(--white);
+  border: none;
+  cursor: pointer;
+  transition: box-shadow 0.3s;
+}
+
+.album-password-btn:hover {
+  box-shadow: 0 0 20px rgba(200,0,26,0.4);
+}
+
+.album-password-error {
+  color: #f66;
+  font-size: 13px;
+  margin-top: 12px;
 }
