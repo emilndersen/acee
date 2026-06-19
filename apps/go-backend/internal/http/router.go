@@ -106,6 +106,7 @@ func NewRouter(pool *pgxpool.Pool, cfg config.Config) http.Handler {
 	bookingsHandler := bookings.NewHandler(bookingsRepo, bot)
 	r.Route("/api/bookings", func(r chi.Router) {
 		r.Post("/", bookingsHandler.Create)
+		r.Get("/busy-dates", bookingsHandler.BusyDates)
 		r.Get("/calendar", bookingsHandler.BusyDates)
 		r.With(AdminOnly(cfg.JWTSecret)).Get("/", bookingsHandler.List)
 		r.With(AdminOnly(cfg.JWTSecret)).Patch("/{id}/status", bookingsHandler.UpdateStatus)
@@ -115,11 +116,12 @@ func NewRouter(pool *pgxpool.Pool, cfg config.Config) http.Handler {
 	// Reviews
 	reviewsRepo := reviews.NewRepo(pool)
 	reviewsHandler := reviews.NewHandler(reviewsRepo, bot)
+
 	r.Route("/api/reviews", func(r chi.Router) {
 		r.Get("/", reviewsHandler.ListPublic)
 		r.Post("/", reviewsHandler.Create)
-		r.With(AdminOnly(cfg.JWTSecret)).Get("/all", reviewsHandler.ListAll)
-		r.With(AdminOnly(cfg.JWTSecret)).Patch("/{id}/visible", reviewsHandler.SetVisible)
+		r.With(AdminOnly(cfg.JWTSecret)).Get("/admin", reviewsHandler.ListAll)
+		r.With(AdminOnly(cfg.JWTSecret)).Patch("/{id}/visibility", reviewsHandler.ToggleVisibility)
 		r.With(AdminOnly(cfg.JWTSecret)).Delete("/{id}", reviewsHandler.Delete)
 	})
 

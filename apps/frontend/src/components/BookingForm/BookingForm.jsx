@@ -20,9 +20,7 @@ export default function BookingForm() {
   const [sent, setSent] = useState(false)
 
   useEffect(() => {
-    const now = new Date()
-    const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-    fetch(`/api/bookings/calendar?month=${month}`)
+    fetch('/api/bookings/busy-dates')
       .then((r) => r.json())
       .then((d) => setBusyDates(d.dates || []))
       .catch(() => {})

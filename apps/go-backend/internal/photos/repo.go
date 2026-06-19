@@ -17,7 +17,7 @@ func NewRepo(pool *pgxpool.Pool) *Repo {
 	return &Repo{pool: pool}
 }
 
-const selectColumns = `id, album_id, title, description, image_url, thumb_url, media_type, sort_order, created_at::text`
+const selectColumns = `p.id, p.album_id, p.title, p.description, p.image_url, p.thumb_url, p.media_type, p.sort_order, p.created_at::text`
 
 func scanPhoto(row interface{ Scan(dest ...any) error }) (Photo, error) {
 	var p Photo
@@ -27,7 +27,7 @@ func scanPhoto(row interface{ Scan(dest ...any) error }) (Photo, error) {
 
 func (r *Repo) ListByAlbumSlug(ctx context.Context, slug string) ([]Photo, error) {
 	rows, err := r.pool.Query(ctx, `
-		SELECT p.`+selectColumns+`
+		SELECT p.id, p.album_id, p.title, p.description, p.image_url, p.thumb_url, p.media_type, p.sort_order, p.created_at::text
 		FROM photos_v2 p
 		JOIN albums a ON a.id = p.album_id
 		WHERE a.slug = $1

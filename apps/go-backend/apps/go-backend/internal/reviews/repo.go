@@ -32,7 +32,8 @@ func (r *Repo) Create(ctx context.Context, in CreateReviewInput) (Review, error)
 func (r *Repo) ListVisible(ctx context.Context) ([]Review, error) {
 	rows, err := r.pool.Query(ctx, `
 		SELECT `+selectColumns+`
-		FROM reviews WHERE is_visible = true
+		FROM reviews
+		WHERE is_visible = true
 		ORDER BY created_at DESC
 	`)
 	if err != nil {

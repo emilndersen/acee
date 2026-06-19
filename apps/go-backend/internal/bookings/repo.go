@@ -92,3 +92,26 @@ func (r *Repo) Delete(ctx context.Context, id string) error {
 	}
 	return nil
 }
+
+func (r *Repo) BusyDates(ctx context.Context) ([]string, error) {
+	rows, err := r.pool.Query(ctx, `
+		SELECT DISTINCT date FROM bookings
+		WHERE status IN ('new', 'confirmed')
+		AND date != ''
+		ORDER BY date
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var dates []string
+	for rows.Next() {
+		var d string
+		if err := rows.Scan(&d); err != nil {
+			return nil, err
+		}
+		dates = append(dates, d)
+	}
+	return dates, rows.Err()
+}
