@@ -4,7 +4,7 @@
 
 .portfolio__heading {
   max-width: 1440px;
-  margin: 0 auto 56px;
+  margin: 0 auto 32px;
   padding: 0 40px;
   font-family: 'Manrope', sans-serif;
   font-size: clamp(48px, 8vw, 110px);
@@ -16,6 +16,39 @@
 
 .portfolio__heading:hover {
   animation: glitch 0.3s ease-in-out;
+}
+
+.portfolio__filters {
+  max-width: 1440px;
+  margin: 0 auto 40px;
+  padding: 0 40px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.portfolio__filter {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 8px 20px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--dust);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.portfolio__filter:hover {
+  border-color: var(--red);
+  color: var(--white);
+}
+
+.portfolio__filter--active {
+  background: var(--red);
+  border-color: var(--red);
+  color: var(--white);
 }
 
 .portfolio__grid {
@@ -65,7 +98,9 @@
   inset: 0;
   background: linear-gradient(transparent 40%, rgba(8,6,8,.9));
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
   padding: 24px;
   opacity: 0;
   transition: opacity 0.4s;
@@ -84,6 +119,15 @@
   text-shadow: 0 0 20px rgba(200,0,26,0.5);
 }
 
+.portfolio__category {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-top: 6px;
+}
+
 @media (max-width: 980px) {
   .portfolio__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -95,7 +139,8 @@
     padding: 0 20px;
     grid-template-columns: 1fr;
   }
-  .portfolio__heading {
+  .portfolio__heading,
+  .portfolio__filters {
     padding: 0 20px;
   }
 }
