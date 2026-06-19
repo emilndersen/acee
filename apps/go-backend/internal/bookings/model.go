@@ -4,6 +4,7 @@ type Booking struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
 	Contact   string `json:"contact"`
+	Telegram  string `json:"telegram"`
 	ShootType string `json:"shoot_type"`
 	Date      string `json:"date"`
 	Idea      string `json:"idea"`
@@ -14,6 +15,7 @@ type Booking struct {
 type CreateBookingInput struct {
 	Name      string `json:"name"`
 	Contact   string `json:"contact"`
+	Telegram  string `json:"telegram"`
 	ShootType string `json:"shoot_type"`
 	Date      string `json:"date"`
 	Idea      string `json:"idea"`
