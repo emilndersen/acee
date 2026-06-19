@@ -61,7 +61,11 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		if booking.Telegram != "" {
 			contact = fmt.Sprintf("%s (TG: @%s)", booking.Contact, strings.TrimPrefix(booking.Telegram, "@"))
 		}
-		h.bot.SendBookingNotification(booking.Name, contact, booking.ShootType, booking.Date, booking.Idea)
+		dateStr := booking.Date
+		if booking.ShootDate != nil && *booking.ShootDate != "" {
+			dateStr = *booking.ShootDate
+		}
+		h.bot.SendBookingNotification(booking.Name, contact, booking.ShootType, dateStr, booking.Idea)
 	}()
 
 	response.WriteJSON(w, http.StatusCreated, map[string]any{
@@ -76,75 +80,67 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		response.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
 	if bookings == nil {
 		bookings = []Booking{}
 	}
+	response.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "bookings": bookings})
+}
 
-	response.WriteJSON(w, http.StatusOK, map[string]any{
-		"ok":       true,
-		"bookings": bookings,
-	})
+func (h *Handler) BusyDates(w http.ResponseWriter, r *http.Request) {
+	month := r.URL.Query().Get("month")
+	if month == "" {
+		response.WriteError(w, http.StatusBadRequest, "month param required (YYYY-MM)")
+		return
+	}
+	dates, err := h.repo.BusyDates(r.Context(), month)
+	if err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if dates == nil {
+		dates = []string{}
+	}
+	response.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "dates": dates})
 }
 
 var validStatuses = map[string]bool{
-	"new":       true,
-	"confirmed": true,
-	"completed": true,
-	"cancelled": true,
+	"new": true, "confirmed": true, "completed": true, "cancelled": true,
 }
 
 func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if id == "" {
-		response.WriteError(w, http.StatusBadRequest, "id is required")
-		return
-	}
-
 	var input UpdateStatusInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		response.WriteError(w, http.StatusBadRequest, "invalid json")
 		return
 	}
-
 	input.Status = strings.TrimSpace(strings.ToLower(input.Status))
 	if !validStatuses[input.Status] {
-		response.WriteError(w, http.StatusBadRequest, "status must be one of: new, confirmed, completed, cancelled")
+		response.WriteError(w, http.StatusBadRequest, "invalid status")
 		return
 	}
-
 	booking, err := h.repo.UpdateStatus(r.Context(), id, input.Status)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			response.WriteError(w, http.StatusNotFound, "booking not found")
+			response.WriteError(w, http.StatusNotFound, "not found")
 			return
 		}
 		response.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
-	response.WriteJSON(w, http.StatusOK, map[string]any{
-		"ok":      true,
-		"booking": booking,
-	})
+	response.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "booking": booking})
 }
 
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if id == "" {
-		response.WriteError(w, http.StatusBadRequest, "id is required")
-		return
-	}
-
 	err := h.repo.Delete(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			response.WriteError(w, http.StatusNotFound, "booking not found")
+			response.WriteError(w, http.StatusNotFound, "not found")
 			return
 		}
 		response.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
 	response.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
 }

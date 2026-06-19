@@ -15,6 +15,7 @@ import (
 	"github.com/emilndersen/acee/apps/go-backend/internal/config"
 	"github.com/emilndersen/acee/apps/go-backend/internal/photos"
 	"github.com/emilndersen/acee/apps/go-backend/internal/response"
+	"github.com/emilndersen/acee/apps/go-backend/internal/reviews"
 	"github.com/emilndersen/acee/apps/go-backend/internal/settings"
 	"github.com/emilndersen/acee/apps/go-backend/internal/telegram"
 	"github.com/emilndersen/acee/apps/go-backend/internal/upload"
@@ -61,7 +62,6 @@ func NewRouter(pool *pgxpool.Pool, cfg config.Config) http.Handler {
 	// Auth
 	authRepo := auth.NewRepo(pool)
 	authHandler := auth.NewHandler(authRepo, cfg.JWTSecret)
-
 	r.Route("/api/auth", func(r chi.Router) {
 		r.Post("/login", authHandler.Login)
 		r.Post("/refresh", authHandler.Refresh)
@@ -104,18 +104,28 @@ func NewRouter(pool *pgxpool.Pool, cfg config.Config) http.Handler {
 	// Bookings
 	bookingsRepo := bookings.NewRepo(pool)
 	bookingsHandler := bookings.NewHandler(bookingsRepo, bot)
-
 	r.Route("/api/bookings", func(r chi.Router) {
 		r.Post("/", bookingsHandler.Create)
+		r.Get("/calendar", bookingsHandler.BusyDates)
 		r.With(AdminOnly(cfg.JWTSecret)).Get("/", bookingsHandler.List)
 		r.With(AdminOnly(cfg.JWTSecret)).Patch("/{id}/status", bookingsHandler.UpdateStatus)
 		r.With(AdminOnly(cfg.JWTSecret)).Delete("/{id}", bookingsHandler.Delete)
 	})
 
+	// Reviews
+	reviewsRepo := reviews.NewRepo(pool)
+	reviewsHandler := reviews.NewHandler(reviewsRepo, bot)
+	r.Route("/api/reviews", func(r chi.Router) {
+		r.Get("/", reviewsHandler.ListPublic)
+		r.Post("/", reviewsHandler.Create)
+		r.With(AdminOnly(cfg.JWTSecret)).Get("/all", reviewsHandler.ListAll)
+		r.With(AdminOnly(cfg.JWTSecret)).Patch("/{id}/visible", reviewsHandler.SetVisible)
+		r.With(AdminOnly(cfg.JWTSecret)).Delete("/{id}", reviewsHandler.Delete)
+	})
+
 	// Settings
 	settingsRepo := settings.NewRepo(pool)
 	settingsHandler := settings.NewHandler(settingsRepo)
-
 	r.Route("/api/settings", func(r chi.Router) {
 		r.Get("/", settingsHandler.List)
 		r.With(AdminOnly(cfg.JWTSecret)).Put("/", settingsHandler.Update)

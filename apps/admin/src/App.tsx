@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import Albums from "./pages/Albums";
 import AlbumPhotos from "./pages/AlbumPhotos";
 import Bookings from "./pages/Bookings";
+import Reviews from "./pages/Reviews";
 import Settings from "./pages/Settings";
 import Layout from "./components/Layout";
 
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="albums" element={<Albums />} />
         <Route path="albums/:slug" element={<AlbumPhotos />} />
         <Route path="bookings" element={<Bookings />} />
+        <Route path="reviews" element={<Reviews />} />
         <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>

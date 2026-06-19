@@ -156,3 +156,9 @@
   .booking { padding: 60px 24px; }
   .booking-form { grid-template-columns: 1fr; }
 }
+
+.form-busy-warning {
+  font-size: 12px;
+  color: var(--red);
+  margin-top: 4px;
+}
