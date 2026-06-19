@@ -144,3 +144,52 @@
     padding: 0 20px;
   }
 }
+
+.category-filters {
+  max-width: 1440px;
+  margin: 0 auto 32px;
+  padding: 0 40px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.category-btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--grey);
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: color 0.3s, border-color 0.3s, background 0.3s;
+}
+
+.category-btn:hover,
+.category-btn.active {
+  color: var(--white);
+  border-color: var(--red);
+  background: rgba(200, 0, 26, 0.08);
+}
+
+.collage-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.collage-item {
+  text-decoration: none;
+  color: inherit;
+}
+
+@media (max-width: 640px) {
+  .category-filters {
+    padding: 0 20px;
+  }
+}
