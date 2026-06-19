@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 )
@@ -12,6 +13,7 @@ type Bot struct {
 }
 
 func NewBot(token, chatID string) *Bot {
+	log.Printf("Telegram bot init: token=%q, chatID=%q", token, chatID)
 	return &Bot{token: token, chatID: chatID}
 }
 
@@ -21,6 +23,7 @@ func (b *Bot) Enabled() bool {
 
 func (b *Bot) Send(text string) error {
 	if !b.Enabled() {
+		log.Println("Telegram bot disabled: token or chatID empty")
 		return nil
 	}
 
@@ -32,10 +35,12 @@ func (b *Bot) Send(text string) error {
 		"parse_mode": {"HTML"},
 	})
 	if err != nil {
+		log.Printf("Telegram send error: %v", err)
 		return err
 	}
 	defer resp.Body.Close()
 
+	log.Printf("Telegram send status: %d", resp.StatusCode)
 	return nil
 }
 
