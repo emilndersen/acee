@@ -1,10 +1,5 @@
 import { useEffect, useRef } from 'react'
 
-/**
- * Attach to any element — adds 'visible' class when it enters the viewport.
- * @param {number} threshold – how much of the element must be visible (0–1)
- * @param {number} delay – extra delay in ms before adding the class
- */
 export function useScrollReveal(threshold = 0.1, delay = 0) {
   const ref = useRef(null)
 
@@ -28,3 +23,5 @@ export function useScrollReveal(threshold = 0.1, delay = 0) {
 
   return ref
 }
+
+export default useScrollReveal

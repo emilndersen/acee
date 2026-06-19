@@ -9,6 +9,7 @@ interface Photo {
   description: string;
   image_url: string;
   thumb_url: string;
+  media_type: string;
   sort_order: number;
   created_at: string;
 }
@@ -24,6 +25,7 @@ export default function AlbumPhotos() {
   const [album, setAlbum] = useState<Album | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   function load() {
@@ -39,15 +41,19 @@ export default function AlbumPhotos() {
   async function handleUpload(files: FileList | null) {
     if (!files || !slug) return;
     setUploading(true);
+    const total = files.length;
     try {
-      for (const file of Array.from(files)) {
-        const { url, thumb_url } = await uploadFile(file);
+      for (let i = 0; i < total; i++) {
+        const file = files[i];
+        setUploadProgress(`Uploading ${i + 1}/${total}: ${file.name}`);
+        const { url, thumb_url, media_type } = await uploadFile(file);
         await api(`/albums/${slug}/photos`, {
           method: "POST",
           body: JSON.stringify({
             title: file.name.replace(/\.[^.]+$/, ""),
             image_url: url,
             thumb_url: thumb_url,
+            media_type: media_type,
           }),
         });
       }
@@ -56,14 +62,19 @@ export default function AlbumPhotos() {
       alert(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploading(false);
+      setUploadProgress("");
       if (fileRef.current) fileRef.current.value = "";
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Delete this photo?")) return;
+    if (!confirm("Delete this media?")) return;
     await api(`/photos/${id}`, { method: "DELETE" });
     load();
+  }
+
+  function isVideo(p: Photo) {
+    return p.media_type === "video";
   }
 
   if (!album) return <p style={{ color: "#999" }}>Loading...</p>;
@@ -78,7 +89,7 @@ export default function AlbumPhotos() {
           ref={fileRef}
           type="file"
           multiple
-          accept="image/*"
+          accept="image/*,video/*,.mp4,.mov,.webm,.avi,.mkv"
           onChange={(e) => handleUpload(e.target.files)}
           style={{ display: "none" }}
         />
@@ -96,8 +107,13 @@ export default function AlbumPhotos() {
             fontWeight: 600,
           }}
         >
-          {uploading ? "Uploading..." : "+ Upload Photos"}
+          {uploading ? "Uploading..." : "+ Upload Media"}
         </button>
+        {uploadProgress && (
+          <span style={{ marginLeft: 12, fontSize: 12, color: "#999" }}>
+            {uploadProgress}
+          </span>
+        )}
       </div>
 
       <div
@@ -114,13 +130,38 @@ export default function AlbumPhotos() {
               background: "#1a1a1a",
               borderRadius: 8,
               overflow: "hidden",
+              position: "relative",
             }}
           >
-            <img
-              src={p.thumb_url || p.image_url}
-              alt={p.title}
-              style={{ width: "100%", height: 160, objectFit: "cover" }}
-            />
+            {isVideo(p) ? (
+              <div style={{ position: "relative" }}>
+                <video
+                  src={p.image_url}
+                  style={{ width: "100%", height: 160, objectFit: "cover" }}
+                  muted
+                  preload="metadata"
+                />
+                <div style={{
+                  position: "absolute",
+                  top: 8,
+                  right: 8,
+                  background: "rgba(200,0,26,0.85)",
+                  color: "#fff",
+                  padding: "2px 8px",
+                  borderRadius: 4,
+                  fontSize: 10,
+                  fontWeight: 700,
+                }}>
+                  VIDEO
+                </div>
+              </div>
+            ) : (
+              <img
+                src={p.thumb_url || p.image_url}
+                alt={p.title}
+                style={{ width: "100%", height: 160, objectFit: "cover" }}
+              />
+            )}
             <div style={{ padding: "8px 10px" }}>
               <div
                 style={{
@@ -154,7 +195,7 @@ export default function AlbumPhotos() {
       </div>
 
       {photos.length === 0 && (
-        <p style={{ color: "#666" }}>No photos yet. Upload some!</p>
+        <p style={{ color: "#666" }}>No media yet. Upload some!</p>
       )}
     </div>
   );

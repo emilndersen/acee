@@ -14,7 +14,7 @@
   left: 40px;
   z-index: 120;
   font-family: 'Manrope', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -63,6 +63,7 @@
   box-shadow:
     0 0 70px rgba(200, 0, 26, 0.25),
     inset 0 0 32px rgba(200, 0, 26, 0.15);
+  animation: glowPulse 4s ease-in-out infinite;
 }
 
 .hero-text {
@@ -77,7 +78,7 @@
 .hero-name {
   margin: 0;
   font-family: 'Manrope', sans-serif;
-  font-size: clamp(68px, 10vw, 120px);
+  font-size: clamp(76px, 11vw, 140px);
   font-weight: 800;
   letter-spacing: 0.12em;
   line-height: 0.9;
@@ -85,10 +86,14 @@
   color: #f5f1ec;
 }
 
+.hero-name:hover {
+  animation: glitch 0.3s ease-in-out;
+}
+
 .hero-desc {
   margin-top: 18px;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: rgba(222, 212, 204, 0.72);
@@ -100,7 +105,7 @@
   left: 50%;
   transform: translateX(-50%);
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
   color: rgba(255,255,255,0.42);

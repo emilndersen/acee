@@ -80,9 +80,9 @@ export async function login(email: string, password: string) {
   return data;
 }
 
-export async function uploadFile(file: File): Promise<{ url: string; thumb_url: string }> {
+export async function uploadFile(file: File): Promise<{ url: string; thumb_url: string; media_type: string }> {
   const form = new FormData();
   form.append("file", file);
-  const data = await api<{ file: { image_url: string; thumb_url: string } }>("/upload", { method: "POST", body: form });
-  return { url: data.file.image_url, thumb_url: data.file.thumb_url };
+  const data = await api<{ file: { image_url: string; thumb_url: string; media_type: string } }>("/upload", { method: "POST", body: form });
+  return { url: data.file.image_url, thumb_url: data.file.thumb_url, media_type: data.file.media_type };
 }

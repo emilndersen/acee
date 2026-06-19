@@ -19,17 +19,19 @@
 
 html {
   scroll-behavior: smooth;
+  font-size: 18px;
 }
 
 body {
   background: var(--black);
   color: var(--cream);
   font-family: 'Cormorant Garamond', serif;
+  font-size: 1rem;
+  line-height: 1.6;
   overflow-x: hidden;
   cursor: none;
 }
 
-/* Noise overlay */
 body::after {
   content: '';
   position: fixed;
@@ -45,4 +47,21 @@ body::after {
   height: 1px;
   background: linear-gradient(90deg, transparent 0%, rgba(200,0,26,0.2) 30%, rgba(200,0,26,0.2) 70%, transparent 100%);
   margin: 20px 0;
+}
+
+@keyframes glitch {
+  0%, 100% { text-shadow: 2px 0 var(--red), -2px 0 cyan; }
+  25% { text-shadow: -2px -1px var(--red), 2px 1px cyan; }
+  50% { text-shadow: 1px 2px var(--red), -1px -2px cyan; }
+  75% { text-shadow: -1px 1px var(--red), 1px -1px cyan; }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(200,0,26,0.3); }
+  50% { box-shadow: 0 0 40px rgba(200,0,26,0.6), 0 0 80px rgba(200,0,26,0.2); }
+}
+
+::selection {
+  background: var(--red);
+  color: var(--white);
 }

@@ -19,10 +19,13 @@ import (
 )
 
 const (
-	maxUploadSize = 20 << 20 // 20 MB
-	thumbWidth    = 400
-	thumbHeight   = 0 // auto
+	maxBodySize = 10 << 30 // 10 GB
+	thumbWidth  = 400
 )
+
+var videoExts = map[string]bool{
+	".mp4": true, ".mov": true, ".webm": true, ".avi": true, ".mkv": true,
+}
 
 type Handler struct {
 	uploadDir string
@@ -33,10 +36,10 @@ func NewHandler(uploadDir string) *Handler {
 }
 
 func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodySize)
 
-	if err := r.ParseMultipartForm(maxUploadSize); err != nil {
-		response.WriteError(w, http.StatusBadRequest, "file too large (max 20MB)")
+	if err := r.ParseMultipartForm(64 << 20); err != nil {
+		response.WriteError(w, http.StatusBadRequest, "file too large")
 		return
 	}
 
@@ -47,21 +50,27 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	if ext == "" {
+		ext = ".bin"
+	}
+
 	contentType := header.Header.Get("Content-Type")
-	if !strings.HasPrefix(contentType, "image/") {
-		response.WriteError(w, http.StatusBadRequest, "only image files allowed")
+	isImage := strings.HasPrefix(contentType, "image/")
+	isVideo := strings.HasPrefix(contentType, "video/") || videoExts[ext]
+
+	if !isImage && !isVideo {
+		response.WriteError(w, http.StatusBadRequest, "only image or video files allowed")
 		return
 	}
 
-	ext := filepath.Ext(header.Filename)
-	if ext == "" {
-		ext = ".jpg"
+	mediaType := "image"
+	if isVideo {
+		mediaType = "video"
 	}
-	ext = strings.ToLower(ext)
 
 	id := uuid.New().String()
 	origName := id + ext
-	thumbName := id + "_thumb" + ext
 
 	origDir := filepath.Join(h.uploadDir, "original")
 	thumbDir := filepath.Join(h.uploadDir, "thumbs")
@@ -81,16 +90,22 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go h.generateThumb(origPath, filepath.Join(thumbDir, thumbName))
+	thumbURL := ""
+	if isImage {
+		thumbName := id + "_thumb.jpg"
+		go h.generateThumb(origPath, filepath.Join(thumbDir, thumbName))
+		thumbURL = fmt.Sprintf("/uploads/thumbs/%s", thumbName)
+	}
 
 	response.WriteJSON(w, http.StatusCreated, map[string]any{
 		"ok": true,
 		"file": map[string]any{
-			"id":        id,
-			"filename":  header.Filename,
-			"image_url": fmt.Sprintf("/uploads/original/%s", origName),
-			"thumb_url": fmt.Sprintf("/uploads/thumbs/%s", thumbName),
-			"size":      header.Size,
+			"id":         id,
+			"filename":   header.Filename,
+			"image_url":  fmt.Sprintf("/uploads/original/%s", origName),
+			"thumb_url":  thumbURL,
+			"media_type": mediaType,
+			"size":       header.Size,
 		},
 	})
 }
@@ -107,7 +122,7 @@ func (h *Handler) generateThumb(srcPath, dstPath string) {
 		return
 	}
 
-	thumb := imaging.Resize(img, thumbWidth, thumbHeight, imaging.Lanczos)
+	thumb := imaging.Resize(img, thumbWidth, 0, imaging.Lanczos)
 
 	out, err := os.Create(dstPath)
 	if err != nil {
