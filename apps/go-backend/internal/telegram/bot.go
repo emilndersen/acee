@@ -69,17 +69,18 @@ func (b *Bot) SendBookingNotification(name, contact, shootType, date, idea strin
 	return b.Send(text)
 }
 
-func (b *Bot) SendReviewNotification(authorName, text string, rating int) error {
+func (b *Bot) SendReviewNotification(authorName, text string, rating int, albumTitle string) error {
 	stars := ""
 	for i := 0; i < rating; i++ {
 		stars += "⭐"
 	}
 	msg := fmt.Sprintf(
 		"💬 <b>Новый отзыв!</b>\n\n"+
+			"<b>Альбом:</b> %s\n"+
 			"<b>Автор:</b> %s\n"+
 			"<b>Рейтинг:</b> %s\n"+
 			"<b>Текст:</b> %s",
-		authorName, stars, text,
+		albumTitle, authorName, stars, text,
 	)
 	return b.Send(msg)
 }

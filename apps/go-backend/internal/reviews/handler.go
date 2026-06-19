@@ -1,6 +1,7 @@
 package reviews
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/emilndersen/acee/apps/go-backend/internal/response"
 	"github.com/emilndersen/acee/apps/go-backend/internal/telegram"
@@ -16,10 +18,23 @@ import (
 type Handler struct {
 	repo *Repo
 	bot  *telegram.Bot
+	pool *pgxpool.Pool
 }
 
-func NewHandler(repo *Repo, bot *telegram.Bot) *Handler {
-	return &Handler{repo: repo, bot: bot}
+func NewHandler(repo *Repo, bot *telegram.Bot, pool *pgxpool.Pool) *Handler {
+	return &Handler{repo: repo, bot: bot, pool: pool}
+}
+
+func (h *Handler) albumTitle(ctx context.Context, albumID string) string {
+	if albumID == "" {
+		return "—"
+	}
+	var title string
+	err := h.pool.QueryRow(ctx, `SELECT title FROM albums WHERE id = $1`, albumID).Scan(&title)
+	if err != nil {
+		return "—"
+	}
+	return title
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
@@ -51,11 +66,30 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go h.bot.SendReviewNotification(review.AuthorName, review.Text, review.Rating)
+	go func() {
+		title := h.albumTitle(context.Background(), review.AlbumID)
+		h.bot.SendReviewNotification(review.AuthorName, review.Text, review.Rating, title)
+	}()
 
 	response.WriteJSON(w, http.StatusCreated, map[string]any{
 		"ok":     true,
 		"review": review,
+	})
+}
+
+func (h *Handler) ListByAlbum(w http.ResponseWriter, r *http.Request) {
+	albumID := chi.URLParam(r, "albumID")
+	reviews, err := h.repo.ListByAlbum(r.Context(), albumID)
+	if err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if reviews == nil {
+		reviews = []Review{}
+	}
+	response.WriteJSON(w, http.StatusOK, map[string]any{
+		"ok":      true,
+		"reviews": reviews,
 	})
 }
 

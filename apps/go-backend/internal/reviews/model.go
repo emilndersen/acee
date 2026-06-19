@@ -2,6 +2,7 @@ package reviews
 
 type Review struct {
 	ID         string `json:"id"`
+	AlbumID    string `json:"album_id"`
 	AuthorName string `json:"author_name"`
 	Text       string `json:"text"`
 	Rating     int    `json:"rating"`
@@ -10,6 +11,7 @@ type Review struct {
 }
 
 type CreateReviewInput struct {
+	AlbumID    string `json:"album_id"`
 	AuthorName string `json:"author_name"`
 	Text       string `json:"text"`
 	Rating     int    `json:"rating"`

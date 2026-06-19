@@ -12,6 +12,9 @@ export default function AlbumPage() {
   const [password, setPassword] = useState("");
   const [pwError, setPwError] = useState("");
   const [unlocked, setUnlocked] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [reviewForm, setReviewForm] = useState({ author_name: "", text: "", rating: 5 });
+  const [reviewSent, setReviewSent] = useState(false);
 
   useEffect(() => {
     fetch(`/api/albums/${slug}`)
@@ -27,6 +30,15 @@ export default function AlbumPage() {
       })
       .catch(() => {});
   }, [slug]);
+
+  useEffect(() => {
+    if (album?.id) {
+      fetch(`/api/reviews/album/${album.id}`)
+        .then((r) => r.json())
+        .then((d) => setReviews(d.reviews || []))
+        .catch(() => {});
+    }
+  }, [album?.id]);
 
   function loadPhotos() {
     fetch(`/api/albums/${slug}/photos`)
@@ -47,6 +59,24 @@ export default function AlbumPage() {
       loadPhotos();
     } else {
       setPwError("Wrong password");
+    }
+  }
+
+  async function handleReviewSubmit(e) {
+    e.preventDefault();
+    try {
+      const res = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...reviewForm, album_id: album.id }),
+      });
+      if (!res.ok) throw new Error();
+      setReviewSent(true);
+      setReviewForm({ author_name: "", text: "", rating: 5 });
+      const d = await fetch(`/api/reviews/album/${album.id}`).then((r) => r.json());
+      setReviews(d.reviews || []);
+    } catch {
+      alert("Не удалось отправить отзыв");
     }
   }
 
@@ -121,6 +151,57 @@ export default function AlbumPage() {
       {current && (
         <Lightbox media={current} onClose={() => setLightboxIndex(-1)} />
       )}
+
+      <div className="album-reviews">
+        <h2 className="album-reviews__heading">Отзывы</h2>
+
+        {reviews.length > 0 && (
+          <div className="album-reviews__list">
+            {reviews.map((r) => (
+              <div key={r.id} className="album-reviews__card">
+                <div className="album-reviews__stars">{"⭐".repeat(r.rating)}</div>
+                <p className="album-reviews__text">{r.text}</p>
+                <span className="album-reviews__author">— {r.author_name}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!reviewSent ? (
+          <form className="album-reviews__form" onSubmit={handleReviewSubmit}>
+            <h3 className="album-reviews__form-title">Оставить отзыв</h3>
+            <input
+              className="album-reviews__input"
+              placeholder="Ваше имя"
+              value={reviewForm.author_name}
+              onChange={(e) => setReviewForm((f) => ({ ...f, author_name: e.target.value }))}
+              required
+            />
+            <div className="album-reviews__rating-select">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className={`album-reviews__star-btn ${reviewForm.rating >= n ? "active" : ""}`}
+                  onClick={() => setReviewForm((f) => ({ ...f, rating: n }))}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            <textarea
+              className="album-reviews__textarea"
+              placeholder="Ваш отзыв..."
+              value={reviewForm.text}
+              onChange={(e) => setReviewForm((f) => ({ ...f, text: e.target.value }))}
+              required
+            />
+            <button type="submit" className="album-reviews__submit">Отправить</button>
+          </form>
+        ) : (
+          <p className="album-reviews__thanks">Спасибо за отзыв! ✦</p>
+        )}
+      </div>
     </section>
   );
 }
