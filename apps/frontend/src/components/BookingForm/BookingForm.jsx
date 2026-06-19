@@ -11,6 +11,7 @@ export default function BookingForm() {
   const [form, setForm] = useState({
     name: '',
     contact: '',
+    telegram: '',
     type: '',
     date: '',
     idea: '',
@@ -20,39 +21,34 @@ export default function BookingForm() {
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
 
-const handleSubmit = async (e) => {
-  e.preventDefault()
+  const handleSubmit = async (e) => {
+    e.preventDefault()
 
-  try {
-    const res = await fetch('/api/bookings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: form.name,
-        contact: form.contact,
-        shoot_type: form.type,
-        date: form.date,
-        idea: form.idea,
-      }),
-    })
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          contact: form.contact,
+          telegram: form.telegram,
+          shoot_type: form.type,
+          date: form.date,
+          idea: form.idea,
+        }),
+      })
 
-    if (!res.ok) {
-      throw new Error('Ошибка отправки')
+      if (!res.ok) {
+        throw new Error('Ошибка отправки')
+      }
+
+      setSent(true)
+      setForm({ name: '', contact: '', telegram: '', type: '', date: '', idea: '' })
+    } catch (error) {
+      console.error(error)
+      alert('Не удалось отправить заявку')
     }
-
-    setSent(true)
-    setForm({
-      name: '',
-      contact: '',
-      type: '',
-      date: '',
-      idea: '',
-    })
-  } catch (error) {
-    console.error(error)
-    alert('Не удалось отправить заявку')
   }
-}
 
   return (
     <section className="booking" id="booking">
@@ -82,14 +78,25 @@ const handleSubmit = async (e) => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Телефон / Telegram</label>
+            <label className="form-label">Телефон</label>
             <input
               className="form-input"
               name="contact"
               value={form.contact}
               onChange={handleChange}
-              placeholder="+7 или @username"
+              placeholder="+7 999 123 45 67"
               required
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Telegram</label>
+            <input
+              className="form-input"
+              name="telegram"
+              value={form.telegram}
+              onChange={handleChange}
+              placeholder="@username"
             />
           </div>
 

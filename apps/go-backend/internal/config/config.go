@@ -3,10 +3,12 @@ package config
 import "os"
 
 type Config struct {
-	Port        string
-	DatabaseURL string
-	JWTSecret   string
-	UploadDir   string
+	Port             string
+	DatabaseURL      string
+	JWTSecret        string
+	UploadDir        string
+	TelegramBotToken string
+	TelegramChatID   string
 }
 
 func Load() Config {
@@ -26,9 +28,11 @@ func Load() Config {
 	}
 
 	return Config{
-		Port:        port,
-		DatabaseURL: os.Getenv("DATABASE_URL"),
-		JWTSecret:   jwtSecret,
-		UploadDir:   uploadDir,
+		Port:             port,
+		DatabaseURL:      os.Getenv("DATABASE_URL"),
+		JWTSecret:        jwtSecret,
+		UploadDir:        uploadDir,
+		TelegramBotToken: os.Getenv("TELEGRAM_BOT_TOKEN"),
+		TelegramChatID:   os.Getenv("TELEGRAM_CHAT_ID"),
 	}
 }

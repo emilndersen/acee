@@ -15,16 +15,16 @@ func NewRepo(pool *pgxpool.Pool) *Repo {
 	return &Repo{pool: pool}
 }
 
-const selectColumns = `id, name, contact, shoot_type, date, idea, COALESCE(status, 'new'), created_at::text`
+const selectColumns = `id, name, contact, telegram, shoot_type, date, idea, COALESCE(status, 'new'), created_at::text`
 
 func (r *Repo) Create(ctx context.Context, in CreateBookingInput) (Booking, error) {
 	var b Booking
 	err := r.pool.QueryRow(ctx, `
-		INSERT INTO bookings (name, contact, shoot_type, date, idea)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO bookings (name, contact, telegram, shoot_type, date, idea)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING `+selectColumns+`
-	`, in.Name, in.Contact, in.ShootType, in.Date, in.Idea).Scan(
-		&b.ID, &b.Name, &b.Contact, &b.ShootType, &b.Date, &b.Idea, &b.Status, &b.CreatedAt,
+	`, in.Name, in.Contact, in.Telegram, in.ShootType, in.Date, in.Idea).Scan(
+		&b.ID, &b.Name, &b.Contact, &b.Telegram, &b.ShootType, &b.Date, &b.Idea, &b.Status, &b.CreatedAt,
 	)
 	return b, err
 }
@@ -44,7 +44,7 @@ func (r *Repo) List(ctx context.Context) ([]Booking, error) {
 	for rows.Next() {
 		var b Booking
 		if err := rows.Scan(
-			&b.ID, &b.Name, &b.Contact, &b.ShootType, &b.Date, &b.Idea, &b.Status, &b.CreatedAt,
+			&b.ID, &b.Name, &b.Contact, &b.Telegram, &b.ShootType, &b.Date, &b.Idea, &b.Status, &b.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -60,7 +60,7 @@ func (r *Repo) UpdateStatus(ctx context.Context, id, status string) (Booking, er
 		WHERE id = $2
 		RETURNING `+selectColumns+`
 	`, status, id).Scan(
-		&b.ID, &b.Name, &b.Contact, &b.ShootType, &b.Date, &b.Idea, &b.Status, &b.CreatedAt,
+		&b.ID, &b.Name, &b.Contact, &b.Telegram, &b.ShootType, &b.Date, &b.Idea, &b.Status, &b.CreatedAt,
 	)
 	return b, err
 }

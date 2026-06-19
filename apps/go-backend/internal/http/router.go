@@ -16,6 +16,7 @@ import (
 	"github.com/emilndersen/acee/apps/go-backend/internal/photos"
 	"github.com/emilndersen/acee/apps/go-backend/internal/response"
 	"github.com/emilndersen/acee/apps/go-backend/internal/settings"
+	"github.com/emilndersen/acee/apps/go-backend/internal/telegram"
 	"github.com/emilndersen/acee/apps/go-backend/internal/upload"
 )
 
@@ -97,9 +98,12 @@ func NewRouter(pool *pgxpool.Pool, cfg config.Config) http.Handler {
 	r.With(AdminOnly(cfg.JWTSecret)).Delete("/api/photos/{id}", photosHandler.Delete)
 	r.With(AdminOnly(cfg.JWTSecret)).Patch("/api/photos/{id}/order", photosHandler.UpdateOrder)
 
+	// Telegram bot
+	bot := telegram.NewBot(cfg.TelegramBotToken, cfg.TelegramChatID)
+
 	// Bookings
 	bookingsRepo := bookings.NewRepo(pool)
-	bookingsHandler := bookings.NewHandler(bookingsRepo)
+	bookingsHandler := bookings.NewHandler(bookingsRepo, bot)
 
 	r.Route("/api/bookings", func(r chi.Router) {
 		r.Post("/", bookingsHandler.Create)

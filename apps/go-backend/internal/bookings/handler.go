@@ -3,6 +3,7 @@ package bookings
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -10,14 +11,16 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/emilndersen/acee/apps/go-backend/internal/response"
+	"github.com/emilndersen/acee/apps/go-backend/internal/telegram"
 )
 
 type Handler struct {
 	repo *Repo
+	bot  *telegram.Bot
 }
 
-func NewHandler(repo *Repo) *Handler {
-	return &Handler{repo: repo}
+func NewHandler(repo *Repo, bot *telegram.Bot) *Handler {
+	return &Handler{repo: repo, bot: bot}
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
@@ -29,6 +32,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	input.Name = strings.TrimSpace(input.Name)
 	input.Contact = strings.TrimSpace(input.Contact)
+	input.Telegram = strings.TrimSpace(input.Telegram)
 	input.ShootType = strings.TrimSpace(input.ShootType)
 	input.Date = strings.TrimSpace(input.Date)
 	input.Idea = strings.TrimSpace(input.Idea)
@@ -51,6 +55,14 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		response.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	go func() {
+		contact := booking.Contact
+		if booking.Telegram != "" {
+			contact = fmt.Sprintf("%s (TG: @%s)", booking.Contact, strings.TrimPrefix(booking.Telegram, "@"))
+		}
+		h.bot.SendBookingNotification(booking.Name, contact, booking.ShootType, booking.Date, booking.Idea)
+	}()
 
 	response.WriteJSON(w, http.StatusCreated, map[string]any{
 		"ok":      true,
